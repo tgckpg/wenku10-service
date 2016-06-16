@@ -1,0 +1,3 @@
+[submodule "botanss"]
+	path = BotanSS
+	url = AstroGit:BotanSS.git

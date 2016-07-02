@@ -1,0 +1,13 @@
+module.exports = {
+	type: "redis"
+	// Time to live for each session in second
+	, ttl: 24 * 3600
+	, config: {
+		host: "123.456.789.012"
+		, port: 1234
+		, database: 0
+		, options: {
+			auth_pass: "123456789"
+		}
+	}
+};

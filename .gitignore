@@ -1,0 +1,6 @@
+auth.js
+session.js
+db.js
+node_modules
+*.swp
+*.log

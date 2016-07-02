@@ -56,6 +56,7 @@ else
 	cl.rootNS( "config", "./config/" );
 	cl.rootNS( "wen10srv", "./wen10srv" );
 	cl.rootNS( "botansx", "./ext/" );
+	cl.rootNS( "LocaleSX", "./wen10srv/locale" );
 
 	var App = cl.load( "wen10srv.app" );
 
@@ -63,6 +64,6 @@ else
 	{
 		var h = new Httph( req, res );
 		new App( h ).run();
-	}, 5000 );
+	}, 5006 );
 	//*/
 }

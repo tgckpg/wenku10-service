@@ -1,0 +1,113 @@
+"use strict";
+
+const Dragonfly = global.Dragonfly;
+const cl = global.botanLoader; 
+const EventEmitter = require( "events" ).EventEmitter;
+const mongoose = require( "mongoose" );
+	const Schema = mongoose.Schema;
+
+const options = cl.load( "wen10srv.config.db" );
+
+const throwEverything = function( err ) {
+	if( err ) throw err;
+};
+
+var db = mongoose.connection;
+db.on( "error", throwEverything );
+
+mongoose.connect( options.host, options.auth );
+
+/* Schema Heads */
+var R_User = { type: Schema.Types.ObjectId, ref: "User" };
+var R_Comment = { type: Schema.Types.ObjectId, ref: "Comment" };
+var R_Script = { type: Schema.Types.ObjectId, ref: "Scripts" };
+/* End Schema Heads */
+
+var M_Script = new Schema({
+	uuid: { type: String, unique: true }
+	, name: String
+	, data: Buffer
+	, desc: String
+	, hits: { type: Number, default: 0 }
+	, zone: [ String ]
+	, type: [ String ]
+	, date_modified: Date
+	, date_createod: Date
+	, history: [{ desc: String, itworks: Boolean, date: Date }]
+	, comments: [ R_Comment ]
+	, related: [ R_Script ]
+	, draft: { type: Boolean, default: true }
+	, public: { type: Boolean, default: false }
+	, enable: { type: Boolean, default: true }
+	, secret: String
+	, access_token: String
+	, author: R_User
+});
+
+var M_User = new Schema({
+	name: { type: String , unique: true }
+
+	, password: String
+	, active: { type: Boolean, default: true }
+	, profile: {
+		display_name: String, email: String
+	}
+});
+
+var M_Comment = new Schema({
+	author: R_User
+	, content: String
+	, date_modified: { type: Date, default: Date.now }
+	, date_created: { type: Date, default: Date.now }
+	, enabled: Boolean
+	, remarks: String
+	, replies: [ R_Comment ]
+});
+
+class DB extends EventEmitter
+{
+	constructor()
+	{
+		super();
+		var Models = [
+			  { name: "User"    , schema: M_User      , hasKey: true }
+			, { name: "Script"  , schema: M_Script    , hasKey: true }
+			, { name: "Comment" , schema: M_Comment }
+		];
+
+		var l = Models.length;
+
+		var _widx = 0;
+		var _widxl = 0;
+
+		var ready = () => {
+			this.ready = true;
+			this.emit( "ready", this );
+		};
+
+		var waitIndex = function( err )
+		{
+			_widx ++;
+			throwEverything( err );
+			if( _widx == _widxl ) ready();
+		};
+
+		this.ready = false;
+
+		for( var i = 0; i < l; i ++ )
+		{
+			var mod = Models[i];
+			var b = mongoose.model( mod.name, mod.schema );
+			if( mod.hasKey )
+			{
+				_widxl ++;
+				b.on( "index", waitIndex );
+			}
+			this[ mod.name ] = b;
+		}
+
+		if( !_widxl ) ready();
+	}
+};
+
+module.exports = new DB();

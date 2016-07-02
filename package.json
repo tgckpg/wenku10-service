@@ -1,0 +1,21 @@
+{
+    "name": "wen10service"
+    , "exportName": "w10srv"
+    , "version": "0.0.1"
+    , "dependencies": {
+        "redis": "latest"
+        , "mongo": "latest"
+        , "mongoose": "latest"
+        , "bcryptjs": "git+https://github.com/dcodeIO/bcrypt.js.git"
+    }
+    , "description": "Simple Blogging Platform by penguin"
+    , "main": "index.js"
+    , "scripts": {
+    }
+    , "keywords": [
+        "wenku10"
+    ]
+    , "author": "Penguin <tgckpg@gmail.com>"
+    , "license": "MIT"
+    , "main": "index.js"
+}

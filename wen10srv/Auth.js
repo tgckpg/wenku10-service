@@ -15,16 +15,22 @@ class Auth
 	constructor( App )
 	{
 		this.App = App;
-		this.Control = new UserControl();
+		this.Control = new UserControl( App );
+		this.cookie = App.HTTP.response.cookie;
 	}
 
-	get LoggedIn()
-	{
-		return this.Control.LoggedIn;
-	}
+	get LoggedIn() { return this.Control.LoggedIn; }
 
 	Authenticate( username, password, callback )
 	{
+		if( this.LoggedIn )
+		{
+			callback( this.App.JsonError( Locale.Auth.ALREADY_LOGGED_IN ) );
+			return;
+		}
+
+		var session = this.Control.session;
+
 		Model.User.findOne({ name: username }).exec(
 			( err, data ) => {
 				if( err )
@@ -41,9 +47,49 @@ class Auth
 					callback(
 						this.App.JsonError( Locale.Auth.AUTH_FAILED )
 					);
+
+					return;
+				}
+
+				if( bcrypt.compareSync( password, data.password ) )
+				{
+					session.set( "LoggedIn", true );
+					session.set( "user.id", data.id );
+
+					this.Control.session.once( "set", () => {
+						this.cookie.set( "Path", "/" );
+						this.cookie.seth( "sid", session.id );
+						callback( this.App.JsonSuccess() );
+					} );
+				}
+				else
+				{
+					callback(
+						this.App.JsonError( Locale.Auth.AUTH_FAILED )
+					);
 				}
 			}
 		);
+	}
+
+	DeAuth( callback )
+	{
+		if( this.LoggedIn )
+		{
+			this.Control.session.destroy( () => {
+				this.cookie.set( "Path", "/" );
+				this.cookie.set( "sid", "" );
+				this.cookie.seth( "Expires", "Thu Jan 01 1970 08:00:00 GMT" );
+
+				callback( this.App.JsonSuccess() );
+
+				this.Control.LoggedIn = false;
+			} );
+		}
+		else
+		{
+			callback( this.App.JsonError( Locale.Auth.UNAUTHORIZED ) );
+		}
 	}
 
 	Register( username, password, callback )
@@ -78,7 +124,7 @@ class Auth
 						Dragonfly.Error( e );
 						callback( new JsonProto( null, false, e ) );
 					}
-					else callback( new JsonProto );
+					else callback( this.App.JsonSuccess() );
 				} );
 			}
 		);

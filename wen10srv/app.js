@@ -57,7 +57,11 @@ class App extends Base
 				switch( e.Data.action )
 				{
 					case "login":
-						this.Auth.Login( e.Data.user, e.Data.passwd, Render );
+						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
+						break;
+
+					case "logout":
+						this.Auth.DeAuth( Render );
 						break;
 
 					case "register":
@@ -100,6 +104,10 @@ class App extends Base
 		return new JsonProto( null, false, message( this.Lang ) );
 	}
 
+	JsonSuccess( data )
+	{
+		return new JsonProto( data, true, "OK" );
+	}
 }
 
 module.exports = App;

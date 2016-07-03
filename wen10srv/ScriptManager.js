@@ -30,7 +30,7 @@ class ScriptMananger
 		if( data.zone ) ScriptM.zone.push( data.zone );
 
 		ScriptM.save( ( e ) => {
-			callback( new JsonProto( null, true, "OK" ) );
+			callback( this.App.JsonSuccess() );
 		} );
 	}
 

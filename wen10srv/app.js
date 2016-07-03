@@ -45,7 +45,6 @@ class App extends Base
 
 		this.Control = new UserControl( this );
 		this.Auth = new MAuth( this );
-		console.log( e.Data );
 		this.Lang = e.Data.lang || this.Lang;
 
 		var Ready = () => {

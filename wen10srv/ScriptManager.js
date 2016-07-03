@@ -64,25 +64,52 @@ class ScriptMananger
 		}, callback );
 	}
 
-	Download( data, callback )
+	Download( postdata, callback )
 	{
-		this.__validate( data, "uuid" );
+		this.__validate( postdata, "uuid" );
 
+		var criteria = { uuid: postdata.uuid };
+
+		if( postdata.access_token )
+		{
+			criteria.$or = [
+				{ access_token: postdata.access_token }
+				, { public: true, draft: false }
+			];
+		}
+		else
+		{
+			criteria.public = true;
+			criteria.draft = false;
+		}
+
+		this.__get(
+			criteria, { data: true }
+			, ( e ) => {
+				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
+			}
+			, callback
+		);
+	}
+
+	__get( criteria, fields, getCallback, callback )
+	{
 		Model.Script.findOne(
-			{ uuid: data.uuid }, { data: 1 }, ( e, data ) => {
+			criteria, fields, ( e, data ) => {
 				if( e )
 				{
+					Dragonfly.Error( e );
 					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
 					return;
 				}
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, uuid ) );
+					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, criteria.uuid ) );
 					return;
 				}
 
-				callback( this.App.JsonSuccess( data.data.toString( "utf8" ) ) );
+				getCallback( data );
 			}
 		);
 	}

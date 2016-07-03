@@ -1,9 +1,9 @@
 [submodule "botanss"]
 	path = BotanSS
-	url = AstroGit:BotanSS.git
+	url = https://github.com/tgckpg/BotanSS.git
 [submodule "ext/modular"]
 	path = ext/modular
-	url = AstroGit:botansx-modular
+	url = https://github.com/tgckpg/botansx-modular.git
 [submodule "ext/utils"]
 	path = ext/utils
-	url = AstroGit:botansx-utils
+	url = https://github.com/tgckpg/botansx-utils.git

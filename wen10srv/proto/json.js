@@ -14,7 +14,7 @@ class Json
 		return JSON.stringify( {
 			data: this.data
 			, status: this.status
-			, message: encodeURI( this.message )
+			, message: this.message
 		} );
 	}
 }

@@ -45,9 +45,11 @@ class App extends Base
 
 		this.Control = new UserControl( this );
 		this.Auth = new MAuth( this );
+		console.log( e.Data );
 		this.Lang = e.Data.lang || this.Lang;
 
 		var Ready = () => {
+			this.HTTP.response.headers[ "Content-Type" ] = "application/json";
 
 			var Render = ( Json ) => {
 				this.result = Json;
@@ -76,9 +78,6 @@ class App extends Base
 					case "list":
 						break;
 
-					case "download":
-						break;
-
 					case "reserve-uuid":
 						var smgr = new ScriptManager( this );
 						smgr.ReserveUuid( e.Data, Render );
@@ -87,6 +86,11 @@ class App extends Base
 					case "upload":
 						var smgr = new ScriptManager( this );
 						smgr.Upload( e.Data, Render );
+						break;
+
+					case "download":
+						var smgr = new ScriptManager( this );
+						smgr.Download( e.Data, Render );
 						break;
 
 					default:

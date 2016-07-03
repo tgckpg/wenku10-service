@@ -40,32 +40,78 @@ class ScriptMananger
 	{
 		var user = data.anon ? null : this.App.Auth.user;
 
-		this.__validate( data, "uuid", "secret", "data", "name", "zone", "type" );
+		this.__validate( data, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
+
+		this.__edit( data.uuid, data.access_token, ( ScriptM ) => {
+			ScriptM.data = new Buffer( data.data );
+			ScriptM.desc = data.desc;
+			ScriptM.name = data.name;
+			ScriptM.secret = data.secret;
+			ScriptM.author = user;
+
+			if( data.zone ) ScriptM.zone.push( data.zone );
+			if( data.tags ) ScriptM.zone.push( data.tags.split( "\n" ) );
+
+		}, callback );
+	}
+
+	Publish( data, callback )
+	{
+		this.__validate( data, "uuid", "access_token", "public" );
+
+		this.__edit( data.uuid, data.access_token, ( ScriptM ) => {
+			ScriptM.public = data.public;
+		}, callback );
+	}
+
+	Download( data, callback )
+	{
+		this.__validate( data, "uuid" );
 
 		Model.Script.findOne(
-			{ uuid: data.uuid }, ( e, ScriptM ) => {
+			{ uuid: data.uuid }, { data: 1 }, ( e, data ) => {
 				if( e )
 				{
 					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
 					return;
 				}
 
-				if( !ScriptM )
+				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.UUID_NOT_RESERVED, data.uuid ) );
+					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, uuid ) );
 					return;
 				}
 
-				ScriptM.data = new Buffer( data.data );
-				ScriptM.desc = data.desc;
-				ScriptM.name = data.name;
-				ScriptM.secret = data.secret;
-				ScriptM.author = user;
+				callback( this.App.JsonSuccess( data.data.toString( "utf8" ) ) );
+			}
+		);
+	}
 
-				if( data.zone ) ScriptM.zone.push( data.zone );
-				if( data.tags ) ScriptM.zone.push( data.tags.split( "\n" ) );
+	__edit( uuid, accessToken, editCallback, callback )
+	{
+		Model.Script.findOne(
+			{ uuid: uuid }, { comment: 0, history: 0 }, ( e, data ) => {
+				if( e )
+				{
+					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
+					return;
+				}
 
-				ScriptM.save( ( e ) => {
+				if( !data )
+				{
+					callback( this.App.JsonError( Locale.ScriptMananger.UUID_NOT_RESERVED, uuid ) );
+					return;
+				}
+
+				if( data.access_token != accessToken )
+				{
+					callback( this.App.JsonError( Locale.ScriptMananger.ACCESS_DENIED ) );
+					return;
+				}
+
+				editCallback( data );
+
+				data.save( ( e ) => {
 					if( e )
 					{
 						callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );

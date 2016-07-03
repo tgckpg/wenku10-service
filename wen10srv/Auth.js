@@ -8,14 +8,13 @@ const bcrypt = require( "bcryptjs" );
 const Model = cl.load( "wen10srv.schema" );
 const JsonProto = cl.load( "wen10srv.proto.json" );
 const Locale = cl.load( "botansx.modular.localization" );
-const UserControl = cl.load( "wen10srv.sitectrl.user" );
 
 class Auth
 {
 	constructor( App )
 	{
 		this.App = App;
-		this.Control = new UserControl( App );
+		this.Control = App.Control;
 		this.cookie = App.HTTP.response.cookie;
 	}
 
@@ -36,18 +35,13 @@ class Auth
 				if( err )
 				{
 					Dragonfly.Error( err );
-					callback(
-						this.App.JsonError( Locale.System.DATABASE_ERROR )
-					);
+					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
 					return;
 				}
 
 				if( !data )
 				{
-					callback(
-						this.App.JsonError( Locale.Auth.AUTH_FAILED )
-					);
-
+					callback( this.App.JsonError( Locale.Auth.AUTH_FAILED ) );
 					return;
 				}
 
@@ -64,9 +58,7 @@ class Auth
 				}
 				else
 				{
-					callback(
-						this.App.JsonError( Locale.Auth.AUTH_FAILED )
-					);
+					callback( this.App.JsonError( Locale.Auth.AUTH_FAILED ) );
 				}
 			}
 		);
@@ -99,17 +91,13 @@ class Auth
 				if( err )
 				{
 					Dragonfly.Error( err );
-					callback(
-						this.App.JsonError( Locale.System.DATABASE_ERROR )
-					);
+					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
 					return;
 				}
 
 				if( data )
 				{
-					callback(
-						this.App.JsonError( Locale.Auth.USER_EXISTS )
-					);
+					callback( this.App.JsonError( Locale.Auth.USER_EXISTS ) );
 					return;
 				}
 
@@ -130,6 +118,5 @@ class Auth
 		);
 	}
 }
-
 
 module.exports = Auth;

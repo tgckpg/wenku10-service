@@ -8,6 +8,7 @@ const JsonProto = cl.load( "wen10srv.proto.json" );
 const MAuth = cl.load( "wen10srv.Auth" );
 const Locale = cl.load( "botansx.modular.localization" );
 const ScriptManager = cl.load( "wen10srv.ScriptManager" );
+const UserControl = cl.load( "wen10srv.sitectrl.user" );
 
 class App extends Base
 {
@@ -42,6 +43,7 @@ class App extends Base
 	{
 		e.Handled = true;
 
+		this.Control = new UserControl( this );
 		this.Auth = new MAuth( this );
 		this.Lang = e.Data.lang || this.Lang;
 
@@ -77,6 +79,11 @@ class App extends Base
 					case "download":
 						break;
 
+					case "reserve-uuid":
+						var smgr = new ScriptManager( this );
+						smgr.ReserveUuid( e.Data, Render );
+						break;
+
 					case "upload":
 						var smgr = new ScriptManager( this );
 						smgr.Upload( e.Data, Render );
@@ -96,12 +103,12 @@ class App extends Base
 			}
 		};
 
-		this.Auth.Control.Run( Ready );
+		this.Control.Run( Ready );
 	}
 
-	JsonError( message )
+	JsonError( message, ...args )
 	{
-		return new JsonProto( null, false, message( this.Lang ) );
+		return new JsonProto( null, false, message( this.Lang ).L( ...args ) );
 	}
 
 	JsonSuccess( data )

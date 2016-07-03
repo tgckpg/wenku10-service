@@ -1,8 +1,7 @@
 "use strict";
 
-
-class Json {
-
+class Json
+{
 	constructor( data, status, message )
 	{
 		this.data = data == undefined ? [] : data;

@@ -44,8 +44,9 @@ class ScriptMananger
 			ScriptM.secret = data.secret;
 			ScriptM.author = user;
 
-			if( data.zone ) ScriptM.zone.push( data.zone );
-			if( data.tags ) ScriptM.zone.push( data.tags.split( "\n" ) );
+			if( data.zone ) ScriptM.zone.push( data.zone.split( "\n" ) );
+			if( data.type ) ScriptM.type.push( data.type.split( "\n" ) );
+			if( data.tags ) ScriptM.tags.push( data.tags.split( "\n" ) );
 
 		}, callback );
 	}
@@ -53,7 +54,7 @@ class ScriptMananger
 	List( postdata, callback )
 	{
 		var criteria = {};
-		var fields = { comments: false, access_token: false };
+		var fields = { comments: false, access_token: false, data: false };
 
 		this.__privateAccess( postdata, criteria );
 		this.utils.use( "object" );
@@ -69,16 +70,16 @@ class ScriptMananger
 					, "uuid", "name", "desc", "hits", "zone"
 					, "type" , "date_modified", "date_createod"
 					, "history", "tags", "related", "draft"
-					, "public", "author"
+					, "public"
 				);
 
-				saneData.data = item.data ? item.data.toString( "utf8" ) : null;
+				saneData.author = item.author ? item.author.profile.display_name : null;
 
 				output.push( saneData );
 			}
 
 			callback( this.App.JsonSuccess( output ) );
-		} );
+		} ).populate( "author" );
 	}
 
 	Publish( edata, callback )

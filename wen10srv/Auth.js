@@ -17,6 +17,7 @@ class Auth
 		this.cookie = App.HTTP.response.cookie;
 	}
 
+	get user() { return this.Control.user; }
 	get LoggedIn() { return this.Control.LoggedIn; }
 
 	Authenticate( username, password, callback )

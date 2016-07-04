@@ -71,6 +71,10 @@ class App extends Base
 						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
 						break;
 
+					case "passwd":
+						this.Auth.ChangePasswd( e.Data.curr, e.Data.new, Render );
+						break;
+
 					case "comment":
 						break;
 

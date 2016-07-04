@@ -57,10 +57,15 @@ class ScriptMananger
 		var fields = { comments: false, access_token: false, data: false };
 
 		this.__privateAccess( postdata, criteria );
-		this.utils.use( "object" );
+		this.__in( postdata, criteria, "zone", "type", "tags" );
+		this.utils.use( "object", "math" );
+
+		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+		var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
 
 		Model.Script.find( criteria, fields, ( err, items ) => {
 			if( this.__dbErr( err, callback ) ) return;
+
 			var output = [];
 
 			for( let item of items )
@@ -79,7 +84,9 @@ class ScriptMananger
 			}
 
 			callback( this.App.JsonSuccess( output ) );
-		} ).populate( "author" );
+		} )
+			.populate( "author" )
+			.skip( skip ).limit( limit );
 	}
 
 	Publish( edata, callback )
@@ -113,6 +120,15 @@ class ScriptMananger
 			}
 			, callback
 		);
+	}
+
+	__in( postdata, criteria, ...fields )
+	{
+		for( let field of fields )
+		{
+			if( postdata[ field ] )
+				criteria[ field ] = { $in: postdata[ field ].split( "\n" ) };
+		}
 	}
 
 	__privateAccess( postdata, criteria )

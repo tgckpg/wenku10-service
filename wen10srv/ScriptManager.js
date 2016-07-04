@@ -26,12 +26,7 @@ class ScriptMananger
 		ScriptM.access_token = data.access_token;
 
 		ScriptM.save( ( e ) => {
-			if( e )
-			{
-				callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
-				return;
-			}
-
+			if( this.__dbErr( e, callback ) ) return;
 			callback( this.App.JsonSuccess( uuid ) );
 		} );
 	}
@@ -55,12 +50,51 @@ class ScriptMananger
 		}, callback );
 	}
 
-	Publish( data, callback )
+	List( postdata, callback )
 	{
-		this.__validate( data, "uuid", "access_token", "public" );
+		var criteria = {};
+		var fields = { comments: false, access_token: false };
 
-		this.__edit( data.uuid, data.access_token, ( ScriptM ) => {
-			ScriptM.public = data.public;
+		this.__privateAccess( postdata, criteria );
+		this.utils.use( "object" );
+
+		Model.Script.find( criteria, fields, ( err, items ) => {
+			if( this.__dbErr( err, callback ) ) return;
+			var output = [];
+
+			for( let item of items )
+			{
+				var saneData = this.utils.refObj(
+					item
+					, "uuid", "name", "desc", "hits", "zone"
+					, "type" , "date_modified", "date_createod"
+					, "history", "tags", "related", "draft"
+					, "public", "author"
+				);
+
+				saneData.data = item.data ? item.data.toString( "utf8" ) : null;
+
+				output.push( saneData );
+			}
+
+			callback( this.App.JsonSuccess( output ) );
+		} );
+	}
+
+	Publish( edata, callback )
+	{
+		this.__validate( edata, "uuid", "access_token", "public" );
+
+		this.__edit( edata.uuid, edata.access_token, ( data ) => {
+
+			data.public = edata.public;
+			data.draft = false;
+
+			data.save( ( e ) => {
+				if( this.__dbErr( e, callback ) ) return;
+				callback( this.App.JsonSuccess() );
+			} );
+
 		}, callback );
 	}
 
@@ -69,7 +103,19 @@ class ScriptMananger
 		this.__validate( postdata, "uuid" );
 
 		var criteria = { uuid: postdata.uuid };
+		this.__privateAccess( postdata, criteria );
 
+		this.__get(
+			criteria, { data: true }
+			, ( e ) => {
+				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
+			}
+			, callback
+		);
+	}
+
+	__privateAccess( postdata, criteria )
+	{
 		if( postdata.access_token )
 		{
 			criteria.$or = [
@@ -82,26 +128,13 @@ class ScriptMananger
 			criteria.public = true;
 			criteria.draft = false;
 		}
-
-		this.__get(
-			criteria, { data: true }
-			, ( e ) => {
-				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
-			}
-			, callback
-		);
 	}
 
 	__get( criteria, fields, getCallback, callback )
 	{
 		Model.Script.findOne(
 			criteria, fields, ( e, data ) => {
-				if( e )
-				{
-					Dragonfly.Error( e );
-					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
-					return;
-				}
+				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
 				{
@@ -118,11 +151,7 @@ class ScriptMananger
 	{
 		Model.Script.findOne(
 			{ uuid: uuid }, { comment: 0, history: 0 }, ( e, data ) => {
-				if( e )
-				{
-					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
-					return;
-				}
+				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
 				{
@@ -139,11 +168,7 @@ class ScriptMananger
 				editCallback( data );
 
 				data.save( ( e ) => {
-					if( e )
-					{
-						callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
-						return;
-					}
+					if( this.__dbErr( e, callback ) ) return;
 					callback( this.App.JsonSuccess() );
 				} );
 			}
@@ -157,6 +182,18 @@ class ScriptMananger
 			if( !data[ i ] )
 				throw this.App.JsonError( Locale.GenericError.MISSING_PARAM, i );
 		}
+	}
+
+	__dbErr( err, callback )
+	{
+		if( err )
+		{
+			Dragonfly.Error( err );
+			callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
+			return true;
+		}
+
+		return false;
 	}
 }
 

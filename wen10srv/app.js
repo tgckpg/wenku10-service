@@ -4,11 +4,13 @@ const cl = global.botanLoader;
 const Dragonfly = global.Dragonfly;
 
 const Base = cl.load( "botanss.net.PostFrame" );
-const JsonProto = cl.load( "wen10srv.proto.json" );
-const MAuth = cl.load( "wen10srv.Auth" );
+
 const Locale = cl.load( "botansx.modular.localization" );
-const ScriptManager = cl.load( "wen10srv.ScriptManager" );
+const JsonProto = cl.load( "wen10srv.proto.json" );
+
 const UserControl = cl.load( "wen10srv.sitectrl.user" );
+const MAuth = cl.load( "wen10srv.Auth" );
+const ScriptManager = cl.load( "wen10srv.ScriptManager" );
 
 class App extends Base
 {
@@ -79,21 +81,23 @@ class App extends Base
 						break;
 
 					case "list":
+						new ScriptManager( this ).List( e.Data, Render );
 						break;
 
 					case "reserve-uuid":
-						var smgr = new ScriptManager( this );
-						smgr.ReserveUuid( e.Data, Render );
+						new ScriptManager( this ).ReserveUuid( e.Data, Render );
 						break;
 
 					case "upload":
-						var smgr = new ScriptManager( this );
-						smgr.Upload( e.Data, Render );
+						new ScriptManager( this ).Upload( e.Data, Render );
 						break;
 
 					case "download":
-						var smgr = new ScriptManager( this );
-						smgr.Download( e.Data, Render );
+						new ScriptManager( this ).Download( e.Data, Render );
+						break;
+
+					case "publish":
+						new ScriptManager( this ).Publish( e.Data, Render );
 						break;
 
 					default:

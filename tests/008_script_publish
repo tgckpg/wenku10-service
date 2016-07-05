@@ -1,0 +1,13 @@
+#!/bin/bash
+
+goal "Publish script"
+
+declare -A POSTDATA=(
+    ["action"]="publish"
+    ["uuid"]="$UUID"
+    ["access_token"]="$ACCESS_TOKEN"
+    ["public"]="1"
+    ["lang"]="$RLANG"
+)
+
+. ./tests/assert_jsuccess

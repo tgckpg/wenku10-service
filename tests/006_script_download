@@ -1,0 +1,20 @@
+#!/bin/bash
+
+goal "Download script ( Not published )"
+
+declare -A POSTDATA=(
+    ["uuid"]="$UUID"
+    ["action"]="download"
+)
+
+. ./tests/assert_jfail
+
+goal "Download script ( with access_token )"
+
+declare -A POSTDATA=(
+    ["uuid"]="$UUID"
+    ["access_token"]="$ACCESS_TOKEN"
+    ["action"]="download"
+)
+
+. ./tests/assert_jsuccess

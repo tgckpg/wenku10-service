@@ -1,0 +1,14 @@
+#!/bin/bash
+
+goal "Reserve uuid"
+
+declare -A POSTDATA=(
+    ["action"]="reserve-uuid"
+    ["access_token"]="$ACCESS_TOKEN"
+    ["lang"]="$RLANG"
+)
+
+. ./tests/assert_jsuccess
+
+grep '"data":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data://g" > uuid.tmp
+exitOk $? "Cannot extract uuid"

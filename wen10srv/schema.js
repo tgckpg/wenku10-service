@@ -31,8 +31,8 @@ var M_Script = new Schema({
 	, hits: { type: Number, default: 0 }
 	, zone: [ String ]
 	, type: [ String ]
-	, date_modified: Date
-	, date_createod: Date
+	, date_modified: { type: Date, default: Date.now }
+	, date_createod: { type: Date, default: Date.now }
 	, history: [{ desc: String, itworks: Boolean, date: Date }]
 	, comments: [ R_Comment ]
 	, tags: [ String ]

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+SEND_COOKIE=true
+
+goal "Account Logout"
+
+declare -A POSTDATA=(
+    ["action"]="logout"
+    ["lang"]="$RLANG"
+)
+
+. ./tests/assert_jsuccess

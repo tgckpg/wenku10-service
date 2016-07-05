@@ -1,0 +1,15 @@
+#!/bin/bash
+cd $(dirname $0);
+
+NODE=~/local/nodejs/v6.0.0
+export PATH=$PATH:"$NODE/bin:$NODE/lib/node_modules"
+
+echo "{CI_SECTION_START} Build"
+
+echo "Installing node modules"
+npm install
+
+echo "{CI_SECTION_END}"
+
+./tests/test
+exit $?

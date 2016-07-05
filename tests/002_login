@@ -1,0 +1,24 @@
+#!/bin/bash
+
+SEND_COOKIE=true
+
+goal "Account Login"
+
+declare -A POSTDATA=(
+    ["action"]="login"
+    ["user"]="$ACCOUNT"
+    ["passwd"]="$PASSWD"
+    ["lang"]="$RLANG"
+)
+
+wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
+    --save-cookies $COOKIE \
+    --keep-session-cookies \
+    --post-data "$( compost POSTDATA )" > $TempFile
+exitOk $? "Cannot download the required file"
+
+grep -q sid $COOKIE
+exitOk $? "sid is not defined"
+
+goal "Account Login ( already logged in )"
+. ./tests/assert_jfail

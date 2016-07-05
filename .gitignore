@@ -4,3 +4,4 @@ db.js
 node_modules
 *.swp
 *.log
+*.tmp

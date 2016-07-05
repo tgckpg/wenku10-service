@@ -1,0 +1,91 @@
+#!/bin/bash
+
+CODE_EXIT=1
+
+function rmTemp() {
+    rm $TempFile
+    rm $TempDir -r
+    exit $CODE_EXIT
+}
+
+function goal() {
+    echo $1
+}
+
+function exitOk() {
+    if [ $1 != "0" ]; then
+        [ -n "$2" ] && echo $2: failed
+        exit 1
+    fi
+}
+
+function exitAtPoint() {
+    FILE=$2
+    sed -i \
+        -e "s/\(.\+\)\/\/ TEST_EXIT_POINT_\([0-9]\+\)/\/\/ TEST_EXIT_POINT_\2/g" \
+        -e "s/\/\/ TEST_EXIT_POINT_$1/setTimeout( () => process.exit(), 1000 ); return; \/\/ TEST_EXIT_POINT_$1/g" \
+        $FILE
+}
+
+function enScriptAt() {
+    FILE=$2
+    sed -i \
+        -e "s/\(.\+\)\/\/\?\* TEST_SCRIPT_POINT_\([0-9]\+\)/\/\* TEST_SCRIPT_POINT_\2/g" \
+        -e "s/\/\* TEST_SCRIPT_POINT_$1/\/\/\* TEST_SCRIPT_POINT_$1/g" \
+        $FILE
+}
+
+
+function waitEnd() {
+
+    FILE=$1
+    TOTAL_WAITS=$2
+    WAIT_INT=$3
+
+    node $FILE &
+
+    PID=$( ps -o pid,command | grep "node $FILE" | awk '{ print $1 }' | head -n 1 )
+
+    PROCESS_ENDED=0
+    l=$(( TOTAL_WAITS + 1 ))
+    for (( i=1; i<$l; i++ ))
+    do
+        echo "Waiting for $FILE to end, pid: $PID"
+
+        (kill -0 $PID 2>&1) >/dev/null
+
+        if [ $? != "0" ]; then
+            PROCESS_ENDED=1
+            break;
+        fi
+
+        sleep $WAIT_INT
+    done
+
+    if [ $PROCESS_ENDED == "0" ]; then
+        echo -n "Process does not end itself. Killing it ..."
+        (kill -9 $PID 2>&1) >/dev/null
+        if [ $? == "0" ]; then
+            echo "done"
+        else
+            echo "failed"
+        fi
+        return 1
+    fi
+
+    return 0
+}
+
+TARGET_TEST=$1
+SERVER_PORT=$2
+SERVER_LOG=$3
+
+TempFile=$(mktemp)
+TempDir=$(mktemp -d)
+
+trap rmTemp EXIT
+[ -x tests/env_var ] && . tests/env_var
+[ -x tests/env_utils ] && . tests/env_utils
+
+. ./$TARGET_TEST
+CODE_EXIT=$?

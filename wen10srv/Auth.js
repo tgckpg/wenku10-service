@@ -6,7 +6,6 @@ const Dragonfly = global.Dragonfly;
 const bcrypt = require( "bcryptjs" );
 
 const Model = cl.load( "wen10srv.schema" );
-const JsonProto = cl.load( "wen10srv.proto.json" );
 const Locale = cl.load( "botansx.modular.localization" );
 
 class Auth
@@ -18,6 +17,7 @@ class Auth
 		this.cookie = App.HTTP.response.cookie;
 	}
 
+	get user() { return this.Control.user; }
 	get LoggedIn() { return this.Control.LoggedIn; }
 
 	Authenticate( username, password, callback )
@@ -32,23 +32,13 @@ class Auth
 
 		Model.User.findOne({ name: username }).exec(
 			( err, data ) => {
-				if( err )
-				{
-					Dragonfly.Error( err );
-					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
-					return;
-				}
+				if( this.__dbErr( err, callback ) ) return;
 
-				if( !data )
-				{
-					callback( this.App.JsonError( Locale.Auth.AUTH_FAILED ) );
-					return;
-				}
-
-				if( bcrypt.compareSync( password, data.password ) )
+				if( data && bcrypt.compareSync( password, data.password ) )
 				{
 					session.set( "LoggedIn", true );
 					session.set( "user.id", data.id );
+					session.set( "user.nickname", data.profile.display_name );
 
 					this.Control.session.once( "set", () => {
 						this.cookie.set( "Path", "/" );
@@ -84,16 +74,45 @@ class Auth
 		}
 	}
 
+	ChangePasswd( currPasswd, newPasswd, callback )
+	{
+		if( !this.LoggedIn )
+		{
+			throw this.App.JsonError( Locale.Auth.UNAUTHORIZED );
+		}
+
+		if(!( currPasswd && newPasswd ))
+		{
+			throw this.App.JsonError( Locale.Auth.EMPTY_PASSWD );
+		}
+
+		var session = this.Control.session;
+
+		Model.User.findById( session.get( "user.id" ) ).exec(
+			( err, data ) => {
+				if( this.__dbErr( err, callback ) ) return;
+
+				if( data && bcrypt.compareSync( currPasswd, data.password ) )
+				{
+					data.password =  bcrypt.hashSync( newPasswd ).replace( /^\$2a/, "$2y" );
+					data.save( ( sErr ) => {
+						if( this.__dbErr( sErr, callback ) ) return;
+						callback( this.App.JsonSuccess() );
+					});
+				}
+				else
+				{
+					callback( this.App.JsonError( Locale.Auth.AUTH_FAILED ) );
+				}
+			}
+		);
+	}
+
 	Register( username, password, callback )
 	{
 		Model.User.findOne({ name: username }).exec(
 			( err, data ) => {
-				if( err )
-				{
-					Dragonfly.Error( err );
-					callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
-					return;
-				}
+				if( this.__dbErr( err, callback ) ) return;
 
 				if( data )
 				{
@@ -106,16 +125,24 @@ class Auth
 				User.password = bcrypt.hashSync( password ).replace( /^\$2a/, "$2y" );
 				User.profile.display_name = User.name;
 
-				User.save( ( e ) => {
-					if( e )
-					{
-						Dragonfly.Error( e );
-						callback( new JsonProto( null, false, e ) );
-					}
-					else callback( this.App.JsonSuccess() );
+				User.save( ( sErr ) => {
+					if( this.__dbErr( sErr, callback ) ) return;
+					callback( this.App.JsonSuccess() );
 				} );
 			}
 		);
+	}
+
+	__dbErr( err, callback )
+	{
+		if( err )
+		{
+			Dragonfly.Error( err );
+			callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
+			return true;
+		}
+
+		return false;
 	}
 }
 

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+ACCOUNT="penguin"
+PASSWD="1234456789"
+RLANG="en-US"
+ACCESS_TOKEN="This is the access token"
+COOKIE="cookie.tmp"
+SEND_COOKIE=false
+
+if [ -f uuid.tmp ]; then
+    UUID=$( cat uuid.tmp )
+fi
+
+SCRIPT_DATA="
+<xml>
+    <test>小説家になろう</test>
+</xml>
+"

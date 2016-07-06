@@ -2,6 +2,7 @@
 
 echo "Applying database settings"
 cp tests/db_config.js wen10srv/config/db.js
+cp tests/session_config.js config/sx/modular/session.js
 
 echo "Changing the Log Level"
 

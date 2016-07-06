@@ -74,6 +74,7 @@ function serverEnd() {
 function secScript() {
     echo "{CI_SECTION_START} $1"
     . ./tests/secscripts/$2
+    CODE_EXIT=$?
     echo "{CI_SECTION_END}"
 
     if [ $TERM = 1 ]; then

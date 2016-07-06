@@ -1,13 +1,14 @@
 #!/bin/bash
 
 echo "Applying database settings"
-sed -i "s/localhost\/wcache/192.168.80.100\/wcache/g" ./wen10srv/config/db.js
+cp tests/db_config.js wen10srv/config/db.js
+cp tests/session_config.js config/sx/modular/session.js
 
 echo "Changing the Log Level"
 
-sed -i "s/Dragonfly.defaultSphere.\+/Dragonfly.defaultSphere = 999;/g" ./index.js
+sed -i "s/Dragonfly.defaultSphere.\+/Dragonfly.defaultSphere = 999;/g" index.js
 echo -n "Server LogLevel as at: "
-grep "Dragonfly.defaultSphere" ./index.js
+grep "Dragonfly.defaultSphere" index.js
 
-node ./tests/secscripts/rmTestCollection.js
+node tests/secscripts/rmTestCollection.js
 stopTest $?

@@ -11,5 +11,6 @@ npm install
 
 echo "{CI_SECTION_END}"
 
-./tests/test
+cd tests
+./test
 exit $?

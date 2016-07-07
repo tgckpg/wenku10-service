@@ -1,9 +1,20 @@
 #!/bin/bash
-
 goal "Action should failed without token"
-. ./tests/assert_jfail
+{
+	. ./tests/assert_jfail
+    LEVEL=$(( LEVEL - 1 ))
+}
 
-POSTDATA+=( ["access_token"]="This is the access token" )
+goal "Action should failed with wrong token"
+{
+	POSTDATA["access_token"]="WRONG_ACCESS_TOKEN"
+	. ./tests/assert_jfail
+    LEVEL=$(( LEVEL - 1 ))
+}
 
 goal "Providing access_token"
-. ./tests/assert_jsuccess
+{
+	POSTDATA["access_token"]="$ACCESS_TOKEN"
+	. ./tests/assert_jsuccess
+    LEVEL=$(( LEVEL - 1 ))
+}

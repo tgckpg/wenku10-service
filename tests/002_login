@@ -26,8 +26,11 @@ goal "Account Login"
         exitOk $? "sid is not defined"
     }
 
-    goal "Account Login ( already logged in )"
-    {
-        . ./tests/assert_jfail
-    }
+    goalend
+}
+
+goal "Account Login ( already logged in )"
+{
+    . ./tests/assert_jfail
+    goalend
 }

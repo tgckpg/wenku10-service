@@ -10,6 +10,13 @@ goal "Reserve uuid"
 
     . ./tests/assert_jsuccess
 
-    grep '"data":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data://g" > uuid.tmp
-    exitOk $? "Cannot extract uuid"
+    goal "Checking uuid"
+    {
+        grep '"data":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data://g" > uuid.tmp
+        exitOk $? "Cannot extract uuid"
+    }
+
+    UUID=$( cat uuid.tmp )
+
+    goalend
 }

@@ -18,5 +18,3 @@ goal "Action should pass"
     grep -q "\"status\":true" $TempFile
     exitOk $? "Unsuccessful status"
 }
-
-LEVEL=$(( LEVEL - 1 ))

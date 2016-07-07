@@ -8,4 +8,6 @@ goal "Script download"
     )
 
     . ./tests/assert_token_access
+
+    goalend
 }

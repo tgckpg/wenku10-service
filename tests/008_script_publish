@@ -20,22 +20,34 @@ goal "Publish script"
 
         . ./tests/assert_jsuccess
 
-        grep -q "$UUID" $TempFile
-        exitOk $? "Published script was not listed"
+        goal "Checking uuid"
+        {
+            grep -q "$UUID" $TempFile
+            exitOk $? "Published script was not listed"
+        }
+
+        goalend
     }
 
-    goal "Unpublish script"
+    goalend
+}
+
+goal "Unpublish script"
+{
+    declare -A POSTDATA=(
+        ["action"]="publish"
+        ["uuid"]="$UUID"
+        ["public"]="0"
+        ["lang"]="$RLANG"
+    )
+
+    . ./tests/assert_token_access
+
+    goal "Checking uuid"
     {
-        declare -A POSTDATA=(
-            ["action"]="publish"
-            ["uuid"]="$UUID"
-            ["public"]="0"
-            ["lang"]="$RLANG"
-        )
-
-        . ./tests/assert_token_access
-
         grep -vq "$UUID" $TempFile
         exitOk $? "Published script was listed"
     }
+
+    goalend
 }

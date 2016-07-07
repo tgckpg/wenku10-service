@@ -1,0 +1,7 @@
+#!/bin/bash
+
+goal "Script listing"
+{
+    echo "Test is not defined yet: failed" | INDENT
+    exit 1
+}

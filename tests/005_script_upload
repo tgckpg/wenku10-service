@@ -2,16 +2,16 @@
 
 goal "Upload script"
 {
-    declare -A POSTDATA=(
-        ["uuid"]="$UUID"
-        ["action"]="upload"
-        ["data"]="$SCRIPT_DATA"
-        ["name"]="toast"
-        ["desc"]="Example Description"
-        ["secret"]="What is my pet name"
-        ["zone"]="小説家になろう"
-        ["type"]="ja"
-    )
+    for i in $( ls ./tests/postscripts/ | grep "^[0-9]\+$" | sort )
+    do
+        goal "Script $i Reserve"
+        {
+            . ./tests/004_reserve_uuid
+            . ./tests/postscripts/$i
+            . ./tests/assert_token_access
+            goalend
+        }
+    done
 
-    . ./tests/assert_token_access
+    goalend
 }

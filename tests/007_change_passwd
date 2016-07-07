@@ -16,6 +16,7 @@ goal "Account Change Password"
         )
 
         . ./tests/assert_jfail
+        goalend
     }
 
     goal "with good current password"
@@ -28,6 +29,7 @@ goal "Account Change Password"
         )
 
         . ./tests/assert_jsuccess
+        goalend
     }
 
     . ./tests/003_logout
@@ -42,6 +44,7 @@ goal "Account Change Password"
         )
 
         . ./tests/assert_jfail
+        goalend
     }
 
     goal "Login with new password"
@@ -77,7 +80,10 @@ goal "Account Change Password"
         )
 
         . ./tests/assert_jsuccess
+        goalend
     }
 
     . ./tests/003_logout
+
+    goalend
 }

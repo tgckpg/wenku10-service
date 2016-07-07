@@ -1,0 +1,9 @@
+#!/bin/bash
+
+goal "Action should failed without token"
+. ./tests/assert_jfail
+
+POSTDATA+=( ["access_token"]="This is the access token" )
+
+goal "Providing access_token"
+. ./tests/assert_jsuccess

@@ -17,6 +17,7 @@ function exitOk() {
         [ -n "$2" ] && echo $2: failed
         exit 1
     fi
+    echo ok
 }
 
 function exitAtPoint() {

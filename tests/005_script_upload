@@ -1,17 +1,17 @@
 #!/bin/bash
 
 goal "Upload script"
+{
+    declare -A POSTDATA=(
+        ["uuid"]="$UUID"
+        ["action"]="upload"
+        ["data"]="$SCRIPT_DATA"
+        ["name"]="toast"
+        ["desc"]="Example Description"
+        ["secret"]="What is my pet name"
+        ["zone"]="小説家になろう"
+        ["type"]="ja"
+    )
 
-declare -A POSTDATA=(
-    ["uuid"]="$UUID"
-    ["action"]="upload"
-    ["data"]="$SCRIPT_DATA"
-    ["name"]="toast"
-    ["desc"]="Example Description"
-    ["secret"]="What is my pet name"
-    ["access_token"]="$ACCESS_TOKEN"
-    ["zone"]="小説家になろう"
-    ["type"]="ja"
-)
-
-. ./tests/assert_jsuccess
+    . ./tests/assert_token_access
+}

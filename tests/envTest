@@ -2,22 +2,29 @@
 
 CODE_EXIT=1
 
+function INDENT {
+    sed "s/^/$( printf "    %.0s" $( seq 0 $1 ) )/g"
+}
+
 function rmTemp() {
     rm $TempFile
     rm $TempDir -r
     exit $CODE_EXIT
 }
 
+LEVEL=0
 function goal() {
-    echo $1
+    echo $1 | INDENT $LEVEL
+    LEVEL=$(( LEVEL + 1 ))
 }
 
 function exitOk() {
+    LEVEL=$(( LEVEL - 1 ))
     if [ $1 != "0" ]; then
-        [ -n "$2" ] && echo $2: failed
+        [ -n "$2" ] && echo $2: failed | INDENT $LEVEL
         exit 1
     fi
-    echo ok
+    echo ok | INDENT $LEVEL
 }
 
 function exitAtPoint() {

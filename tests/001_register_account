@@ -1,12 +1,13 @@
 #!/bin/bash
 
 goal "Account Registration"
+{
+	declare -A POSTDATA=(
+		["action"]="register"
+		["user"]="$ACCOUNT"
+		["passwd"]="$PASSWD"
+		["lang"]="$RLANG"
+	)
 
-declare -A POSTDATA=(
-    ["action"]="register"
-    ["user"]="$ACCOUNT"
-    ["passwd"]="$PASSWD"
-    ["lang"]="$RLANG"
-)
-
-. ./tests/assert_jsuccess
+	. ./tests/assert_jsuccess
+}

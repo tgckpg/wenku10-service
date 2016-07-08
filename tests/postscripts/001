@@ -1,0 +1,16 @@
+#!/bash/bash
+
+declare -A POSTDATA=(
+	["uuid"]="$UUID"
+	["action"]="upload"
+	["name"]="Script 001"
+	["desc"]="Description of script 001"
+	["secret"]="What is my pet name"
+	["zone"]="Zone 1"
+	["type"]="Type A"
+	["data"]="
+<xml>
+	<test>小説家になろう</test>
+</xml>
+"
+)

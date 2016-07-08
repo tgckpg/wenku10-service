@@ -1,13 +1,53 @@
 #!/bin/bash
 
 goal "Publish script"
+{
+	declare -A POSTDATA=(
+		["action"]="publish"
+		["uuid"]="$UUID"
+		["public"]="1"
+		["lang"]="$RLANG"
+	)
 
-declare -A POSTDATA=(
-    ["action"]="publish"
-    ["uuid"]="$UUID"
-    ["access_token"]="$ACCESS_TOKEN"
-    ["public"]="1"
-    ["lang"]="$RLANG"
-)
+	. ./tests/assert_token_access
 
-. ./tests/assert_jsuccess
+	goal "Checking published state"
+	{
+		declare -A POSTDATA=(
+			["action"]="list"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking uuid"
+		{
+			grep -q "$UUID" $TempFile
+			exitOk $? "Published script was not listed"
+		}
+
+		goalend
+	}
+
+	goalend
+}
+
+goal "Unpublish script"
+{
+	declare -A POSTDATA=(
+		["action"]="publish"
+		["uuid"]="$UUID"
+		["public"]="0"
+		["lang"]="$RLANG"
+	)
+
+	. ./tests/assert_token_access
+
+	goal "Checking uuid"
+	{
+		grep -vq "$UUID" $TempFile
+		exitOk $? "Published script was listed"
+	}
+
+	goalend
+}

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/001
+	. ./tests/assert_token_access
+	. ./tests/006_script_download
+	goalend
+}
+
+goal "Remove Script"
+{
+	declare -A POSTDATA=(
+		["action"]="remove"
+		["uuid"]="$UUID"
+		["lang"]="$RLANG"
+	)
+
+	. ./tests/assert_token_access
+
+	goal "Script download should failed"
+	{
+		declare -A POSTDATA=(
+			["uuid"]="$UUID"
+			["access_token"]="$ACCESS_TOKEN"
+			["action"]="download"
+		)
+
+		. ./tests/assert_jfail
+
+		goalend
+	}
+
+	goalend
+}

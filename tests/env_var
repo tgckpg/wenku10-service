@@ -8,11 +8,5 @@ COOKIE="cookie.tmp"
 SEND_COOKIE=false
 
 if [ -f uuid.tmp ]; then
-    UUID=$( cat uuid.tmp )
+	UUID=$( cat uuid.tmp )
 fi
-
-SCRIPT_DATA="
-<xml>
-    <test>小説家になろう</test>
-</xml>
-"

@@ -1,0 +1,142 @@
+#!/bin/bash
+
+goal "Script listing"
+{
+	for i in $( ls ./tests/postscripts/ | grep "^[0-9]\+$" | sort )
+	do
+		goal "Script $i"
+		{
+			. ./tests/004_reserve_uuid
+			. ./tests/postscripts/$i
+			. ./tests/assert_token_access
+
+			goal "Publish script"
+			{
+				declare -A POSTDATA=(
+					["action"]="publish"
+					["uuid"]="$UUID"
+					["public"]="1"
+					["lang"]="$RLANG"
+				)
+
+				. ./tests/assert_token_access
+
+				goalend
+			}
+
+			goalend
+		}
+	done
+
+	goal "Zone: Zone 1"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["zone"]="Zone 1"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -q "Script 001" $TempFile
+			failthru $? "Script 001 should appear in this search"
+
+			grep -vq "Script 002" $TempFile
+			exitOk $? "Script 002 should NOT appear in this search"
+		}
+
+		goalend
+	}
+
+	goal "Zone: 隨機網文"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["zone"]="隨機網文"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -q -e "Script 002" -e "Script 004" $TempFile
+			failthru $? "Script 002 & 004 should both appear in this search"
+
+			grep -vq "Script 001" $TempFile
+			exitOk $? "Script 001 should NOT appear in this search"
+		}
+
+		goalend
+	}
+
+	goal "Type: Type B & Name: 中文"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["name"]="中文"
+			["type"]="Type B"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -q "Script 003" $TempFile
+			failthru $? "Script 003 should appear in this search"
+
+			grep -vq -e "Script 001" -e "Script 002" -e "Script 004" $TempFile
+			exitOk $? "Script 001, 002 and 004 should NOT appear in this search"
+		}
+
+		goalend
+	}
+
+	goal "Type: Type B & Name: 中文 & Desc: I am a penguin"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["name"]="中文"
+			["type"]="Type B"
+			["desc"]="I am a penguin"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -q "\"data\":\[\]" $TempFile
+			exitOk $? "There should be no data on this search"
+		}
+
+		goalend
+	}
+
+	goal "Name: toast"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["name"]="toast"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -q "toast" $TempFile
+			failthru $? "Script 005 should appear in this search"
+
+			grep -vq -e "Script 001" -e "Script 002" -e "Script 003" -e "Script 004" $TempFile
+			exitOk $? "Script 001-004 should NOT appear in this search"
+		}
+
+		goalend
+	}
+
+	goalend
+}

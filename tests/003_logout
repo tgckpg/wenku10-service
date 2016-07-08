@@ -3,10 +3,13 @@
 SEND_COOKIE=true
 
 goal "Account Logout"
+{
+	declare -A POSTDATA=(
+		["action"]="logout"
+		["lang"]="$RLANG"
+	)
 
-declare -A POSTDATA=(
-    ["action"]="logout"
-    ["lang"]="$RLANG"
-)
+	. ./tests/assert_jsuccess
 
-. ./tests/assert_jsuccess
+	goalend
+}

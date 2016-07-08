@@ -80,8 +80,8 @@ class App extends Base
 					case "comment":
 						break;
 
-					case "list":
-						new ScriptManager( this ).List( e.Data, Render );
+					case "search":
+						new ScriptManager( this ).Search( e.Data, Render );
 						break;
 
 					case "reserve-uuid":
@@ -94,6 +94,10 @@ class App extends Base
 
 					case "download":
 						new ScriptManager( this ).Download( e.Data, Render );
+						break;
+
+					case "remove":
+						new ScriptManager( this ).Remove( e.Data, Render );
 						break;
 
 					case "publish":

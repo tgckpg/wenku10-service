@@ -1,0 +1,17 @@
+#!/bash/bash
+
+declare -A POSTDATA=(
+	["uuid"]="$UUID"
+	["action"]="upload"
+	["name"]="Script 003 中文"
+	["desc"]="Description of script 002 中文"
+	["secret"]="What is my pet name"
+	["zone"]="Zone 2"
+	["type"]="Type B"
+	["data"]="
+<xml>
+	<test2>MMMMM</test2>
+	<test>DDDDDDDDDD</test>
+</xml>
+"
+)

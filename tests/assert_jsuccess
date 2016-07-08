@@ -1,14 +1,20 @@
 #!/bin/bash
 
-if $SEND_COOKIE; then
-    wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
-        --load-cookies $COOKIE \
-        --post-data "$( compost POSTDATA )" > $TempFile
-else
-    wget -qO- "http://127.0.0.1:$SERVER_PORT/" --post-data "$( compost POSTDATA )" > $TempFile
-fi
+goal "Sending Request"
+{
+	if $SEND_COOKIE; then
+		wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
+			--load-cookies $COOKIE \
+			--post-data "$( compost POSTDATA )" > $TempFile
+	else
+		wget -qO- "http://127.0.0.1:$SERVER_PORT/" --post-data "$( compost POSTDATA )" > $TempFile
+	fi
 
-exitOk $? "Cannot download the required file"
+	exitOk $? "Cannot download the required file"
+}
 
-grep -q "\"status\":true" $TempFile
-exitOk $? "Unsuccessful status"
+goal "Action should pass"
+{
+	grep -q "\"status\":true" $TempFile
+	exitOk $? "Unsuccessful status"
+}

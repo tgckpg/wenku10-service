@@ -3,75 +3,87 @@ SEND_COOKIE=true
 NEW_PASS="GGGGuhecGGGG"
 
 goal "Account Change Password"
+{
+	. ./tests/002_login
 
-. ./tests/002_login
-echo ok
+	goal "with wrong current password"
+	{
+		declare -A POSTDATA=(
+			["action"]="passwd"
+			["curr"]="$NEW_PASS"
+			["new"]="1111111"
+			["lang"]="$RLANG"
+		)
 
-goal "with wrong current password"
+		. ./tests/assert_jfail
+		goalend
+	}
 
-declare -A POSTDATA=(
-    ["action"]="passwd"
-    ["curr"]="$NEW_PASS"
-    ["new"]="1111111"
-    ["lang"]="$RLANG"
-)
+	goal "with good current password"
+	{
+		declare -A POSTDATA=(
+			["action"]="passwd"
+			["curr"]="$PASSWD"
+			["new"]="$NEW_PASS"
+			["lang"]="$RLANG"
+		)
 
-. ./tests/assert_jfail
-echo ok
+		. ./tests/assert_jsuccess
+		goalend
+	}
 
-goal "with good current password"
-declare -A POSTDATA=(
-    ["action"]="passwd"
-    ["curr"]="$PASSWD"
-    ["new"]="$NEW_PASS"
-    ["lang"]="$RLANG"
-)
+	. ./tests/003_logout
 
-. ./tests/assert_jsuccess
-echo ok
+	goal "Login with old password"
+	{
+		declare -A POSTDATA=(
+			["action"]="login"
+			["user"]="$ACCOUNT"
+			["passwd"]="$PASSWD"
+			["lang"]="$RLANG"
+		)
 
-. ./tests/003_logout
-echo ok
+		. ./tests/assert_jfail
+		goalend
+	}
 
-goal "Login with old password"
-declare -A POSTDATA=(
-    ["action"]="login"
-    ["user"]="$ACCOUNT"
-    ["passwd"]="$PASSWD"
-    ["lang"]="$RLANG"
-)
+	goal "Login with new password"
+	{
+		declare -A POSTDATA=(
+			["action"]="login"
+			["user"]="$ACCOUNT"
+			["passwd"]="$NEW_PASS"
+			["lang"]="$RLANG"
+		)
 
-. ./tests/assert_jfail
-echo ok
+		wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
+			--save-cookies $COOKIE \
+			--keep-session-cookies \
+			--post-data "$( compost POSTDATA )" > $TempFile
 
-goal "Login with new password"
-declare -A POSTDATA=(
-    ["action"]="login"
-    ["user"]="$ACCOUNT"
-    ["passwd"]="$NEW_PASS"
-    ["lang"]="$RLANG"
-)
+		exitOk $? "Cannot download the required file"
+	}
 
-wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
-    --save-cookies $COOKIE \
-    --keep-session-cookies \
-    --post-data "$( compost POSTDATA )" > $TempFile
-exitOk $? "Cannot download the required file"
+	goal "Checking cookie sid"
+	{
+		grep -q sid $COOKIE
+		exitOk $? "sid is not defined"
+	}
 
-grep -q sid $COOKIE
-exitOk $? "sid is not defined"
+	goal "Change the password back"
+	{
+		declare -A POSTDATA=(
+			["action"]="passwd"
+			["curr"]="$NEW_PASS"
+			["new"]="$PASSWD"
+			["lang"]="$RLANG"
+		)
 
-echo ok
+		. ./tests/assert_jsuccess
+		goalend
+	}
 
-goal "Change the password back"
-declare -A POSTDATA=(
-    ["action"]="passwd"
-    ["curr"]="$NEW_PASS"
-    ["new"]="$PASSWD"
-    ["lang"]="$RLANG"
-)
+	. ./tests/003_logout
 
-. ./tests/assert_jsuccess
-echo ok
-
-. ./tests/003_logout
+	goalend
+}

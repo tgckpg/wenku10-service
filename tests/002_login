@@ -3,22 +3,34 @@
 SEND_COOKIE=true
 
 goal "Account Login"
+{
+	declare -A POSTDATA=(
+		["action"]="login"
+		["user"]="$ACCOUNT"
+		["passwd"]="$PASSWD"
+		["lang"]="$RLANG"
+	)
 
-declare -A POSTDATA=(
-    ["action"]="login"
-    ["user"]="$ACCOUNT"
-    ["passwd"]="$PASSWD"
-    ["lang"]="$RLANG"
-)
+	goal "Send login request"
+	{
+		wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
+			--save-cookies $COOKIE \
+			--keep-session-cookies \
+			--post-data "$( compost POSTDATA )" > $TempFile
+		exitOk $? "Cannot download the required file"
+	}
 
-wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
-    --save-cookies $COOKIE \
-    --keep-session-cookies \
-    --post-data "$( compost POSTDATA )" > $TempFile
-exitOk $? "Cannot download the required file"
+	goal "Checking cookie sid"
+	{
+		grep -q sid $COOKIE
+		exitOk $? "sid is not defined"
+	}
 
-grep -q sid $COOKIE
-exitOk $? "sid is not defined"
+	goalend
+}
 
 goal "Account Login ( already logged in )"
-. ./tests/assert_jfail
+{
+	. ./tests/assert_jfail
+	goalend
+}

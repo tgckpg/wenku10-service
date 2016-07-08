@@ -17,20 +17,20 @@ SERVER_OK=false
 l=$(( TOTAL_WAITS + 1 ))
 for (( i=1; i<$l; i++ ))
 do
-    echo "Waiting for server: ($i/$TOTAL_WAITS)"
+	echo "Waiting for server: ($i/$TOTAL_WAITS)"
 
-    { grep -q "Listening on: [0-9]\+$" $SERVER_LOG 2>&1; } > /dev/null
+	{ grep -q "Listening on: [0-9]\+$" $SERVER_LOG 2>&1; } > /dev/null
 
-    if [ $? == "0" ]; then
-        echo "  Service is ready"
-        SERVER_OK=true
-        break
-    fi
+	if [ $? == "0" ]; then
+		echo "  Service is ready"
+		SERVER_OK=true
+		break
+	fi
 
-    isServerOk
-    if [ $? != "0" ]; then
-        break;
-    fi
+	isServerOk
+	if [ $? != "0" ]; then
+		break;
+	fi
 
-    sleep $WAIT_INT
+	sleep $WAIT_INT
 done

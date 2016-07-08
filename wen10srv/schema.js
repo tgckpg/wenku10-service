@@ -39,9 +39,18 @@ var M_Script = new Schema({
 	, related: [ R_Script ]
 	, draft: { type: Boolean, default: true }
 	, public: { type: Boolean, default: false }
+	/**
+	 * Script can be disabled by admins if that script was inappropriate
+	 * disabled script will not be downloadable nor listable unless
+	 * provided a correct access_token
+	 **/
 	, enable: { type: Boolean, default: true }
+	/**
+	 * This is for recovering lost access_token
+	 **/
 	, secret: String
 	, access_token: String
+	// Can be null, i.e. anonymous
 	, author: R_User
 });
 

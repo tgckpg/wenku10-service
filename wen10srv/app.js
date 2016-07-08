@@ -96,6 +96,10 @@ class App extends Base
 						new ScriptManager( this ).Download( e.Data, Render );
 						break;
 
+					case "remove":
+						new ScriptManager( this ).Remove( e.Data, Render );
+						break;
+
 					case "publish":
 						new ScriptManager( this ).Publish( e.Data, Render );
 						break;

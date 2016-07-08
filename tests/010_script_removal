@@ -1,0 +1,22 @@
+#!/bin/bash
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/001
+	. ./tests/assert_token_access
+	goalend
+}
+
+goal "Remove Script"
+{
+	declare -A POSTDATA=(
+		["action"]="remove"
+		["uuid"]="$UUID"
+		["lang"]="$RLANG"
+	)
+
+	. ./tests/assert_token_access
+
+	goalend
+}

@@ -54,8 +54,10 @@ class ScriptMananger
 	List( postdata, callback )
 	{
 		var criteria = {};
+
 		var fields = { comments: false, access_token: false, data: false };
 
+		this.__stringSearch( postdata, criteria, "name", "desc" );
 		this.__privateAccess( postdata, criteria );
 		this.__in( postdata, criteria, "zone", "type", "tags" );
 		this.utils.use( "object", "math" );
@@ -122,6 +124,34 @@ class ScriptMananger
 		);
 	}
 
+	Remove( postdata, callback )
+	{
+		this.__validate( postdata, "uuid", "access_token" );
+
+		Model.Script.findOne(
+			{ uuid: uuid }, { access_token: true }, ( e, data ) => {
+				if( this.__dbErr( e, callback ) ) return;
+
+				if( !data )
+				{
+					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, uuid ) );
+					return;
+				}
+
+				if( data.access_token != postdata.access_token )
+				{
+					callback( this.App.JsonError( Locale.ScriptMananger.ACCESS_DENIED ) );
+					return;
+				}
+
+				data.remove( ( e ) => {
+					if( this.__dbErr( e, callback ) ) return;
+					callback( this.App.JsonSuccess() );
+				} );
+			}
+		);
+	}
+
 	__in( postdata, criteria, ...fields )
 	{
 		for( let field of fields )
@@ -131,19 +161,36 @@ class ScriptMananger
 		}
 	}
 
+	__stringSearch( postdata, criteria, ...fields )
+	{
+		try
+		{
+			for( let field of fields )
+			{
+				if( postdata[ field ] )
+					criteria[ field ] = new RegExp( postdata[ field ], "g" );
+			}
+		}
+		catch( ex )
+		{
+			throw this.App.JsonError( ex.message );
+		}
+	}
+
 	__privateAccess( postdata, criteria )
 	{
 		if( postdata.access_token )
 		{
 			criteria.$or = [
 				{ access_token: postdata.access_token }
-				, { public: true, draft: false }
+				, { public: true, draft: false, enable: true }
 			];
 		}
 		else
 		{
 			criteria.public = true;
 			criteria.draft = false;
+			criteria.enable = true;
 		}
 	}
 

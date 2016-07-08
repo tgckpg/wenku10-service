@@ -19,7 +19,7 @@ function compost()
 
     DATA=""
     for key in ${!data[@]}; do
-        DATA="$DATA${key[0]}=$( encodeuri ${data[$key]} )&"
+        DATA="$DATA${key[0]}=$( encodeuri "${data[$key]}" )&"
     done
     echo ${DATA:0:-1}
 }

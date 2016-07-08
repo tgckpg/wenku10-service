@@ -51,7 +51,7 @@ class ScriptMananger
 		}, callback );
 	}
 
-	List( postdata, callback )
+	Search( postdata, callback )
 	{
 		var criteria = {};
 
@@ -91,13 +91,13 @@ class ScriptMananger
 			.skip( skip ).limit( limit );
 	}
 
-	Publish( edata, callback )
+	Publish( postdata, callback )
 	{
-		this.__validate( edata, "uuid", "access_token", "public" );
+		this.__validate( postdata, "uuid", "access_token", "public" );
 
-		this.__edit( edata.uuid, edata.access_token, ( data ) => {
+		this.__edit( postdata.uuid, postdata.access_token, ( data ) => {
 
-			data.public = edata.public;
+			data.public = postdata.public;
 			data.draft = false;
 
 			data.save( ( e ) => {

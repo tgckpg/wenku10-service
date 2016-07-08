@@ -22,12 +22,16 @@ function goalend() {
 	LEVEL=$(( LEVEL - 1 ))
 }
 
-function exitOk() {
-	goalend
+function failthru() {
 	if [ $1 != "0" ]; then
 		[ -n "$2" ] && echo $2: failed | INDENT $LEVEL
 		exit 1
 	fi
+}
+
+function exitOk() {
+	goalend
+	failthru $1 $2
 	echo ok | INDENT $LEVEL
 }
 

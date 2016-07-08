@@ -12,6 +12,8 @@ const throwEverything = function( err ) {
 	if( err ) throw err;
 };
 
+mongoose.Promise = global.Promise;
+
 var db = mongoose.connection;
 db.on( "error", throwEverything );
 

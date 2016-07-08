@@ -129,7 +129,7 @@ class ScriptMananger
 		this.__validate( postdata, "uuid", "access_token" );
 
 		Model.Script.findOne(
-			{ uuid: uuid }, { access_token: true }, ( e, data ) => {
+			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )

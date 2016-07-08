@@ -6,80 +6,80 @@ SERVER_LOG=$( grep "var path = \"[^\"]\+\"" ./config/log.js | sed "s/.\+\"\([^\"
 TERM=0
 
 function error() {
-    CODE_EXIT=1
-    echo "Error: $1"
+	CODE_EXIT=1
+	echo "Error: $1"
 }
 
 function stopTest() {
-    if [ $1 != "0" ]; then
-        TERM=1
-    fi
+	if [ $1 != "0" ]; then
+		TERM=1
+	fi
 }
 
 function isServerOk() {
-    (kill -0 $PID 2>&1) >/dev/null
+	(kill -0 $PID 2>&1) >/dev/null
 }
 
 function begin_tests() {
-    echo
-    echo "Begin test"
-    CODE_EXIT=0
-    for i in $( ls tests | grep "^[0-9]\+_[^\.]\+$" | sort )
-    do
-        isServerOk
-        if [ $? != "0" ]; then
-            error "Server is down"
-            break;
-        fi
+	echo
+	echo "Begin test"
+	CODE_EXIT=0
+	for i in $( ls tests | grep "^[0-9]\+_[^\.]\+$" | sort )
+	do
+		isServerOk
+		if [ $? != "0" ]; then
+			error "Server is down"
+			break;
+		fi
 
-        echo -n "  $i: "
+		echo -n "  $i: "
 
-        RESULT=$( mktemp )
-        ./tests/envTest "./tests/$i" $SERVER_PORT $SERVER_LOG 2>&1 > $RESULT
+		RESULT=$( mktemp )
+		./tests/envTest "./tests/$i" $SERVER_PORT $SERVER_LOG 2>&1 > $RESULT
 
-        if [ $? != "0" ]; then
-            echo "failed"
-            CODE_EXIT=1
-            sed 's/^/    /g' $RESULT
-        else
-            echo "ok"
-        fi
+		if [ $? != "0" ]; then
+			echo "failed"
+			CODE_EXIT=1
+			sed 's/^/	/g' $RESULT
+		else
+			echo "ok"
+		fi
 
-        rm $RESULT
-    done
-    echo "Test End"
+		rm $RESULT
+	done
+	echo "Test End"
 }
 
 function serverEnd() {
-    echo -n "Killing the server: $PID ..."
+	echo -n "Killing the server: $PID ..."
 
-    (kill -9 $PID 2>&1) >/dev/null
+	(kill -9 $PID 2>&1) >/dev/null
 
-    isServerOk
-    if [ $? == "0" ]; then
-        echo "failed"
-    else
-        echo "done"
-    fi
+	isServerOk
+	if [ $? == "0" ]; then
+		echo "failed"
+	else
+		echo "done"
+	fi
 
-    echo "{CI_SECTION_START} access.log"
-    cat $SERVER_LOG;
-    echo "{CI_SECTION_END}"
+	echo "{CI_SECTION_START} access.log"
+	cat $SERVER_LOG;
+	echo "{CI_SECTION_END}"
 
-    sleep 1
+	sleep 1
 
-    exit $CODE_EXIT
+	exit $CODE_EXIT
 }
 
 function secScript() {
-    echo "{CI_SECTION_START} $1"
-    . ./tests/secscripts/$2
-    CODE_EXIT=$?
-    echo "{CI_SECTION_END}"
+	echo "{CI_SECTION_START} $1"
+	. ./tests/secscripts/$2
+	CODE_EXIT=$?
+	echo "{CI_SECTION_END}"
 
-    if [ $TERM = 1 ]; then
-        exit $CODE_EXIT
-    fi
+	if [ $TERM = 1 ]; then
+		exit $CODE_EXIT
+	fi
 }
 
 SERVER_OK=false
@@ -88,7 +88,7 @@ secScript Settings settings
 secScript nodeServer node_server
 
 if [ $SERVER_OK = true ]; then
-    echo "{CI_SECTION_START} Test"
-    begin_tests
-    echo "{CI_SECTION_END}"
+	echo "{CI_SECTION_START} Test"
+	begin_tests
+	echo "{CI_SECTION_END}"
 fi

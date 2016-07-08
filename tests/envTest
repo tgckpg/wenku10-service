@@ -3,89 +3,89 @@
 CODE_EXIT=1
 
 function INDENT {
-    sed "s/^/$( printf "    %.0s" $( seq 0 $1 ) )/g"
+	sed "s/^/$( printf "	%.0s" $( seq 0 $1 ) )/g"
 }
 
 function rmTemp() {
-    rm $TempFile
-    rm $TempDir -r
-    exit $CODE_EXIT
+	rm $TempFile
+	rm $TempDir -r
+	exit $CODE_EXIT
 }
 
 LEVEL=0
 function goal() {
-    echo $1 | INDENT $LEVEL
-    LEVEL=$(( LEVEL + 1 ))
+	echo $1 | INDENT $LEVEL
+	LEVEL=$(( LEVEL + 1 ))
 }
 
 function goalend() {
-    LEVEL=$(( LEVEL - 1 ))
+	LEVEL=$(( LEVEL - 1 ))
 }
 
 function exitOk() {
-    goalend
-    if [ $1 != "0" ]; then
-        [ -n "$2" ] && echo $2: failed | INDENT $LEVEL
-        exit 1
-    fi
-    echo ok | INDENT $LEVEL
+	goalend
+	if [ $1 != "0" ]; then
+		[ -n "$2" ] && echo $2: failed | INDENT $LEVEL
+		exit 1
+	fi
+	echo ok | INDENT $LEVEL
 }
 
 function exitAtPoint() {
-    FILE=$2
-    sed -i \
-        -e "s/\(.\+\)\/\/ TEST_EXIT_POINT_\([0-9]\+\)/\/\/ TEST_EXIT_POINT_\2/g" \
-        -e "s/\/\/ TEST_EXIT_POINT_$1/setTimeout( () => process.exit(), 1000 ); return; \/\/ TEST_EXIT_POINT_$1/g" \
-        $FILE
+	FILE=$2
+	sed -i \
+		-e "s/\(.\+\)\/\/ TEST_EXIT_POINT_\([0-9]\+\)/\/\/ TEST_EXIT_POINT_\2/g" \
+		-e "s/\/\/ TEST_EXIT_POINT_$1/setTimeout( () => process.exit(), 1000 ); return; \/\/ TEST_EXIT_POINT_$1/g" \
+		$FILE
 }
 
 function enScriptAt() {
-    FILE=$2
-    sed -i \
-        -e "s/\(.\+\)\/\/\?\* TEST_SCRIPT_POINT_\([0-9]\+\)/\/\* TEST_SCRIPT_POINT_\2/g" \
-        -e "s/\/\* TEST_SCRIPT_POINT_$1/\/\/\* TEST_SCRIPT_POINT_$1/g" \
-        $FILE
+	FILE=$2
+	sed -i \
+		-e "s/\(.\+\)\/\/\?\* TEST_SCRIPT_POINT_\([0-9]\+\)/\/\* TEST_SCRIPT_POINT_\2/g" \
+		-e "s/\/\* TEST_SCRIPT_POINT_$1/\/\/\* TEST_SCRIPT_POINT_$1/g" \
+		$FILE
 }
 
 
 function waitEnd() {
 
-    FILE=$1
-    TOTAL_WAITS=$2
-    WAIT_INT=$3
+	FILE=$1
+	TOTAL_WAITS=$2
+	WAIT_INT=$3
 
-    node $FILE &
+	node $FILE &
 
-    PID=$( ps -o pid,command | grep "node $FILE" | awk '{ print $1 }' | head -n 1 )
+	PID=$( ps -o pid,command | grep "node $FILE" | awk '{ print $1 }' | head -n 1 )
 
-    PROCESS_ENDED=0
-    l=$(( TOTAL_WAITS + 1 ))
-    for (( i=1; i<$l; i++ ))
-    do
-        echo "Waiting for $FILE to end, pid: $PID"
+	PROCESS_ENDED=0
+	l=$(( TOTAL_WAITS + 1 ))
+	for (( i=1; i<$l; i++ ))
+	do
+		echo "Waiting for $FILE to end, pid: $PID"
 
-        (kill -0 $PID 2>&1) >/dev/null
+		(kill -0 $PID 2>&1) >/dev/null
 
-        if [ $? != "0" ]; then
-            PROCESS_ENDED=1
-            break;
-        fi
+		if [ $? != "0" ]; then
+			PROCESS_ENDED=1
+			break;
+		fi
 
-        sleep $WAIT_INT
-    done
+		sleep $WAIT_INT
+	done
 
-    if [ $PROCESS_ENDED == "0" ]; then
-        echo -n "Process does not end itself. Killing it ..."
-        (kill -9 $PID 2>&1) >/dev/null
-        if [ $? == "0" ]; then
-            echo "done"
-        else
-            echo "failed"
-        fi
-        return 1
-    fi
+	if [ $PROCESS_ENDED == "0" ]; then
+		echo -n "Process does not end itself. Killing it ..."
+		(kill -9 $PID 2>&1) >/dev/null
+		if [ $? == "0" ]; then
+			echo "done"
+		else
+			echo "failed"
+		fi
+		return 1
+	fi
 
-    return 0
+	return 0
 }
 
 TARGET_TEST=$1

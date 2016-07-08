@@ -2,16 +2,16 @@
 
 goal "Upload script"
 {
-    for i in $( ls ./tests/postscripts/ | grep "^[0-9]\+$" | sort )
-    do
-        goal "Script $i"
-        {
-            . ./tests/004_reserve_uuid
-            . ./tests/postscripts/$i
-            . ./tests/assert_token_access
-            goalend
-        }
-    done
+	for i in $( ls ./tests/postscripts/ | grep "^[0-9]\+$" | sort )
+	do
+		goal "Script $i"
+		{
+			. ./tests/004_reserve_uuid
+			. ./tests/postscripts/$i
+			. ./tests/assert_token_access
+			goalend
+		}
+	done
 
-    goalend
+	goalend
 }

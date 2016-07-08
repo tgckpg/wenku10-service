@@ -2,14 +2,14 @@
 goal "Action should failed without token"
 {
 	. ./tests/assert_jfail
-    LEVEL=$(( LEVEL - 1 ))
+	LEVEL=$(( LEVEL - 1 ))
 }
 
 goal "Action should failed with empty token"
 {
 	POSTDATA["access_token"]=""
 	. ./tests/assert_jfail
-    LEVEL=$(( LEVEL - 1 ))
+	LEVEL=$(( LEVEL - 1 ))
 }
 
 goal "Action should failed with wrong token"
@@ -23,5 +23,5 @@ goal "Providing access_token"
 {
 	POSTDATA["access_token"]="$ACCESS_TOKEN"
 	. ./tests/assert_jsuccess
-    LEVEL=$(( LEVEL - 1 ))
+	LEVEL=$(( LEVEL - 1 ))
 }

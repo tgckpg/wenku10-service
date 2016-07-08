@@ -2,12 +2,12 @@
 
 goal "Script download"
 {
-    declare -A POSTDATA=(
-        ["uuid"]="$UUID"
-        ["action"]="download"
-    )
+	declare -A POSTDATA=(
+		["uuid"]="$UUID"
+		["action"]="download"
+	)
 
-    . ./tests/assert_token_access
+	. ./tests/assert_token_access
 
-    goalend
+	goalend
 }

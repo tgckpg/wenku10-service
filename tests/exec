@@ -5,5 +5,5 @@ TERM=0
 
 for i in $( ls tests | grep "^$1" | sort )
 do
-    ./tests/envTest "./tests/$i" $SERVER_PORT
+	./tests/envTest "./tests/$i" $SERVER_PORT
 done

@@ -4,86 +4,86 @@ NEW_PASS="GGGGuhecGGGG"
 
 goal "Account Change Password"
 {
-    . ./tests/002_login
+	. ./tests/002_login
 
-    goal "with wrong current password"
-    {
-        declare -A POSTDATA=(
-            ["action"]="passwd"
-            ["curr"]="$NEW_PASS"
-            ["new"]="1111111"
-            ["lang"]="$RLANG"
-        )
+	goal "with wrong current password"
+	{
+		declare -A POSTDATA=(
+			["action"]="passwd"
+			["curr"]="$NEW_PASS"
+			["new"]="1111111"
+			["lang"]="$RLANG"
+		)
 
-        . ./tests/assert_jfail
-        goalend
-    }
+		. ./tests/assert_jfail
+		goalend
+	}
 
-    goal "with good current password"
-    {
-        declare -A POSTDATA=(
-            ["action"]="passwd"
-            ["curr"]="$PASSWD"
-            ["new"]="$NEW_PASS"
-            ["lang"]="$RLANG"
-        )
+	goal "with good current password"
+	{
+		declare -A POSTDATA=(
+			["action"]="passwd"
+			["curr"]="$PASSWD"
+			["new"]="$NEW_PASS"
+			["lang"]="$RLANG"
+		)
 
-        . ./tests/assert_jsuccess
-        goalend
-    }
+		. ./tests/assert_jsuccess
+		goalend
+	}
 
-    . ./tests/003_logout
+	. ./tests/003_logout
 
-    goal "Login with old password"
-    {
-        declare -A POSTDATA=(
-            ["action"]="login"
-            ["user"]="$ACCOUNT"
-            ["passwd"]="$PASSWD"
-            ["lang"]="$RLANG"
-        )
+	goal "Login with old password"
+	{
+		declare -A POSTDATA=(
+			["action"]="login"
+			["user"]="$ACCOUNT"
+			["passwd"]="$PASSWD"
+			["lang"]="$RLANG"
+		)
 
-        . ./tests/assert_jfail
-        goalend
-    }
+		. ./tests/assert_jfail
+		goalend
+	}
 
-    goal "Login with new password"
-    {
-        declare -A POSTDATA=(
-            ["action"]="login"
-            ["user"]="$ACCOUNT"
-            ["passwd"]="$NEW_PASS"
-            ["lang"]="$RLANG"
-        )
+	goal "Login with new password"
+	{
+		declare -A POSTDATA=(
+			["action"]="login"
+			["user"]="$ACCOUNT"
+			["passwd"]="$NEW_PASS"
+			["lang"]="$RLANG"
+		)
 
-        wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
-            --save-cookies $COOKIE \
-            --keep-session-cookies \
-            --post-data "$( compost POSTDATA )" > $TempFile
+		wget -qO- "http://127.0.0.1:$SERVER_PORT/" \
+			--save-cookies $COOKIE \
+			--keep-session-cookies \
+			--post-data "$( compost POSTDATA )" > $TempFile
 
-        exitOk $? "Cannot download the required file"
-    }
+		exitOk $? "Cannot download the required file"
+	}
 
-    goal "Checking cookie sid"
-    {
-        grep -q sid $COOKIE
-        exitOk $? "sid is not defined"
-    }
+	goal "Checking cookie sid"
+	{
+		grep -q sid $COOKIE
+		exitOk $? "sid is not defined"
+	}
 
-    goal "Change the password back"
-    {
-        declare -A POSTDATA=(
-            ["action"]="passwd"
-            ["curr"]="$NEW_PASS"
-            ["new"]="$PASSWD"
-            ["lang"]="$RLANG"
-        )
+	goal "Change the password back"
+	{
+		declare -A POSTDATA=(
+			["action"]="passwd"
+			["curr"]="$NEW_PASS"
+			["new"]="$PASSWD"
+			["lang"]="$RLANG"
+		)
 
-        . ./tests/assert_jsuccess
-        goalend
-    }
+		. ./tests/assert_jsuccess
+		goalend
+	}
 
-    . ./tests/003_logout
+	. ./tests/003_logout
 
-    goalend
+	goalend
 }

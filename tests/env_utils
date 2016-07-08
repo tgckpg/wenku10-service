@@ -14,12 +14,12 @@ function encodeuri() {
 
 function compost()
 {
-    var=$(declare -p "$1")
-    eval "declare -A data="${var#*=}
+	var=$(declare -p "$1")
+	eval "declare -A data="${var#*=}
 
-    DATA=""
-    for key in ${!data[@]}; do
-        DATA="$DATA${key[0]}=$( encodeuri "${data[$key]}" )&"
-    done
-    echo ${DATA:0:-1}
+	DATA=""
+	for key in ${!data[@]}; do
+		DATA="$DATA${key[0]}=$( encodeuri "${data[$key]}" )&"
+	done
+	echo ${DATA:0:-1}
 }

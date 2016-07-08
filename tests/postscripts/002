@@ -1,16 +1,16 @@
 #!/bash/bash
 
 declare -A POSTDATA=(
-    ["uuid"]="$UUID"
-    ["action"]="upload"
-    ["name"]="Script 002"
-    ["desc"]="Description of script 002 這是中文"
-    ["secret"]="What is my pet name"
-    ["zone"]="隨機網文"
-    ["type"]="Type A"
-    ["data"]="
+	["uuid"]="$UUID"
+	["action"]="upload"
+	["name"]="Script 002"
+	["desc"]="Description of script 002 這是中文"
+	["secret"]="What is my pet name"
+	["zone"]="隨機網文"
+	["type"]="Type A"
+	["data"]="
 <xml>
-    <test>Test2</test>
+	<test>Test2</test>
 </xml>
 "
 )

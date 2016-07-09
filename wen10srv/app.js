@@ -10,6 +10,7 @@ const JsonProto = cl.load( "wen10srv.proto.json" );
 
 const UserControl = cl.load( "wen10srv.sitectrl.user" );
 const MAuth = cl.load( "wen10srv.Auth" );
+const Validation = cl.load( "wen10srv.Validation" );
 const ScriptManager = cl.load( "wen10srv.ScriptManager" );
 
 class App extends Base
@@ -62,6 +63,7 @@ class App extends Base
 				switch( e.Data.action )
 				{
 					case "login":
+						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
 						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
 						break;
 
@@ -70,10 +72,14 @@ class App extends Base
 						break;
 
 					case "register":
+						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
+						Validation.PASSWD( e.Data.passwd );
 						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
 						break;
 
 					case "passwd":
+						Validation.NOT_EMPTY( e.Data, "curr", "new" );
+						Validation.PASSWD( e.Data.new );
 						this.Auth.ChangePasswd( e.Data.curr, e.Data.new, Render );
 						break;
 
@@ -115,9 +121,17 @@ class App extends Base
 			}
 			catch( e )
 			{
-				this.result = ( e.constructor == JsonProto )
-					? e
-					: new JsonProto( null, false, e.message );
+				switch( e.constructor )
+				{
+					case JsonProto:
+						this.result = e;
+						break;
+					case Validation.ValidationError:
+						this.result = this.JsonError( e.message, e.params );
+						break;
+					default:
+						this.result = new JsonProto( null, false, e.message );
+				}
 
 				this.plantResult();
 			}

@@ -70,7 +70,7 @@ class Auth
 		}
 		else
 		{
-			callback( this.App.JsonError( Locale.Auth.UNAUTHORIZED ) );
+			callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 		}
 	}
 
@@ -78,7 +78,7 @@ class Auth
 	{
 		if( !this.LoggedIn )
 		{
-			throw this.App.JsonError( Locale.Auth.UNAUTHORIZED );
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 		}
 
 		if(!( currPasswd && newPasswd ))

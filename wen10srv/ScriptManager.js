@@ -5,6 +5,7 @@ const cl = global.botanLoader;
 const Dragonfly = global.Dragonfly;
 
 const Model = cl.load( "wen10srv.schema" );
+const Validation = cl.load( "wen10srv.Validation" );
 const Locale = cl.load( "botansx.modular.localization" );
 
 const ObjectId = require( "mongoose" ).Types.ObjectId;
@@ -19,7 +20,7 @@ class ScriptManager
 
 	ReserveUuid( data, callback )
 	{
-		this.__validate( data, "access_token" );
+		Validation.NOT_EMPTY( data, "access_token" );
 
 		this.utils.use( "random" );
 		var uuid = this.utils.uuid();
@@ -38,7 +39,7 @@ class ScriptManager
 	{
 		var user = data.anon ? null : this.App.Auth.user;
 
-		this.__validate( data, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
+		Validation.NOT_EMPTY( data, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
 
 		this.__edit( data.uuid, data.access_token, ( ScriptM ) => {
 			ScriptM.data = new Buffer( data.data );
@@ -96,7 +97,7 @@ class ScriptManager
 
 	Publish( postdata, callback )
 	{
-		this.__validate( postdata, "uuid", "access_token", "public" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "public" );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( data ) => {
 
@@ -113,7 +114,7 @@ class ScriptManager
 
 	Download( postdata, callback )
 	{
-		this.__validate( postdata, "uuid" );
+		Validation.NOT_EMPTY( postdata, "uuid" );
 
 		var criteria = { uuid: postdata.uuid };
 		this.__privateAccess( postdata, criteria );
@@ -129,7 +130,7 @@ class ScriptManager
 
 	Remove( postdata, callback )
 	{
-		this.__validate( postdata, "uuid", "access_token" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token" );
 
 		Model.Script.findOne(
 			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
@@ -143,7 +144,7 @@ class ScriptManager
 
 				if( data.access_token != postdata.access_token )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.ACCESS_DENIED ) );
+					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 					return;
 				}
 
@@ -157,7 +158,7 @@ class ScriptManager
 
 	GetComments( postdata, callback )
 	{
-		this.__validate( postdata, "id", "target" );
+		Validation.NOT_EMPTY( postdata, "id", "target" );
 		this.utils.use( "object", "math" );
 
 		var pipelines = [];
@@ -222,9 +223,9 @@ class ScriptManager
 	Comment( postdata, callback )
 	{
 		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Auth.LOGIN_NEEDED );
+			throw this.App.JsonError( Locale.Auth.ACCESS_DENIED );
 
-		this.__validate( postdata, "id", "target", "content" );
+		Validation.NOT_EMPTY( postdata, "id", "target", "content" );
 
 		var crit_id = {};
 		var model;
@@ -357,7 +358,7 @@ class ScriptManager
 
 				if( data.access_token != accessToken )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.ACCESS_DENIED ) );
+					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 					return;
 				}
 
@@ -369,15 +370,6 @@ class ScriptManager
 				} );
 			}
 		);
-	}
-
-	__validate( data, ...fields )
-	{
-		for( let i of fields )
-		{
-			if( !data[ i ] )
-				throw this.App.JsonError( Locale.Error.MISSING_PARAM, i );
-		}
 	}
 
 	__dbErr( err, callback )

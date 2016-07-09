@@ -2,12 +2,90 @@
 
 goal "Account Registration"
 {
-	declare -A POSTDATA=(
-		["action"]="register"
-		["user"]="$ACCOUNT"
-		["passwd"]="$PASSWD"
-		["lang"]="$RLANG"
-	)
+	goal "Empty password"
+	{
+		declare -A POSTDATA=(
+			["action"]="register"
+			["user"]="$ACCOUNT"
+			["passwd"]=""
+			["lang"]="$RLANG"
+		)
 
-	. ./tests/assert_jsuccess
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Empty username"
+	{
+		declare -A POSTDATA=(
+			["action"]="register"
+			["user"]="$ACCOUNT"
+			["passwd"]=""
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+		goalend
+	}
+
+
+	goal "Password: aaa"
+	{
+		declare -A POSTDATA=(
+			["action"]="register"
+			["user"]="$ACCOUNT"
+			["passwd"]="aaa"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Password: 12345678"
+	{
+		declare -A POSTDATA=(
+			["action"]="register"
+			["user"]="$ACCOUNT"
+			["passwd"]="12345678"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Password: 123456789aa"
+	{
+		declare -A POSTDATA=(
+			["action"]="register"
+			["user"]="$ACCOUNT"
+			["passwd"]="123456789aa"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Valid password"
+	{
+		declare -A POSTDATA=(
+			["action"]="register"
+			["user"]="$ACCOUNT"
+			["passwd"]="$PASSWD"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+		goalend
+	}
+
+	goal "Register again"
+	{
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goalend
 }

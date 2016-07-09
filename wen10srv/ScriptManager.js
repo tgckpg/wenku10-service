@@ -1,12 +1,15 @@
 "use strict";
 
+
 const cl = global.botanLoader;
 const Dragonfly = global.Dragonfly;
 
 const Model = cl.load( "wen10srv.schema" );
 const Locale = cl.load( "botansx.modular.localization" );
 
-class ScriptMananger
+const ObjectId = require( "mongoose" ).Types.ObjectId;
+
+class ScriptManager
 {
 	constructor( App )
 	{
@@ -134,13 +137,13 @@ class ScriptMananger
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_SCRIPT, uuid ) );
 					return;
 				}
 
 				if( data.access_token != postdata.access_token )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.ACCESS_DENIED ) );
+					callback( this.App.JsonError( Locale.ScriptManager.ACCESS_DENIED ) );
 					return;
 				}
 
@@ -154,61 +157,66 @@ class ScriptMananger
 
 	GetComments( postdata, callback )
 	{
-		this.__validate( postdata, "target" );
+		this.__validate( postdata, "id", "target" );
 		this.utils.use( "object", "math" );
+
+		var pipelines = [];
+		var model;
 
 		switch( postdata.target )
 		{
 			case "script":
-				this.__validate( postdata, "uuid" );
-
-				var skip = Math.abs( parseInt( postdata.skip ) || 0 );
-				var limit = this.utils.clamp( parseInt( postdata.limit ) || 30, 1, 100 );
-				var date_before = new Date( Date.now() );
-
-				// XXX: in mongodb 3.3.4, lookup can do arrays
-				// So it can save up 1 unwind step
-				Model.Script.aggregate([
-					{ $match: { uuid: postdata.uuid } }
-					, { $project: { _id: "$comments._id" } }
-					, { $unwind: "$_id" }
-					, { $lookup: { from: "comments", localField: "_id", foreignField: "_id", as: "data" } }
-					, { $unwind: "$data" }
-
-					// pagination
-					, { $match: { "data.date_created": { $lte: date_before } } }
-					, { $sort: { "data.date_created": -1 } }
-					, { $skip: skip }
-					, { $limit: limit }
-
-					// Find the associated user
-					, { $lookup: { from: "users", localField: "data.author", foreignField: "_id", as: "author" } }
-					, { $unwind: "$author" }
-
-					// Project finally
-					, { $project: {
-						"content": { $cond: {
-							if: "$data.enabled", then: "$data.content", else: "$data.remarks"
-						} }
-						, "replies": "$data.replies"
-						, "date_created": "$data.date_created"
-						, "date_modified": "$data.date_modified"
-						, "author._id": "$author._id"
-						, "author.name": "$author.profile.display_name"
-					} }
-				] ).exec( ( e, data ) => {
-					if( this.__dbErr( e, callback ) ) return;
-					callback( this.App.JsonSuccess( data ) );
-				} );
-
+				model = "Script";
+				pipelines.push({ $match: { uuid: postdata.id } });
+				pipelines.push({ $project: { _id: "$comments" } });
 				break;
 
 			case "comment":
-				this.__validate( postdata, "id" );
+				model = "Comment";
+				pipelines.push({ $match: { _id: ObjectId( postdata.id ) } });
+				pipelines.push({ $project: { _id: "$replies" } });
 				break;
+
 			default:
 				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
 		}
+
+		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+		var limit = this.utils.clamp( parseInt( postdata.limit ) || 30, 1, 100 );
+		var date_before = new Date( Date.now() );
+
+		// XXX: in mongodb 3.3.4, lookup can do arrays
+		// So we may save up 1 unwind step when it released
+		pipelines.push({ $unwind: "$_id" });
+		pipelines.push({ $lookup: { from: "comments", localField: "_id", foreignField: "_id", as: "data" } });
+		pipelines.push({ $unwind: "$data" });
+
+		// pagination
+		pipelines.push({ $match: { "data.date_created": { $lte: date_before } } });
+		pipelines.push({ $sort: { "data.date_created": -1 } });
+		pipelines.push({ $skip: skip });
+		pipelines.push({ $limit: limit });
+
+		// Find the associated user
+		pipelines.push({ $lookup: { from: "users", localField: "data.author", foreignField: "_id", as: "author" } });
+		pipelines.push({ $unwind: "$author" });
+
+		// Project finally
+		pipelines.push({ $project: {
+			"content": { $cond: {
+				if: "$data.enabled", then: "$data.content", else: "$data.remarks"
+			} }
+			, "replies": "$data.replies"
+			, "date_created": "$data.date_created"
+			, "date_modified": "$data.date_modified"
+			, "author._id": "$author._id"
+			, "author.name": "$author.profile.display_name"
+		} });
+
+		Model[ model ].aggregate( pipelines ).exec( ( e, data ) => {
+			if( this.__dbErr( e, callback ) ) return;
+			callback( this.App.JsonSuccess( data ) );
+		} );
 	}
 
 	Comment( postdata, callback )
@@ -216,51 +224,64 @@ class ScriptMananger
 		if( !this.App.Auth.LoggedIn )
 			throw this.App.JsonError( Locale.Auth.LOGIN_NEEDED );
 
-		this.__validate( postdata, "target", "content" );
+		this.__validate( postdata, "id", "target", "content" );
+
+		var crit_id = {};
+		var model;
+		var target;
+
 		switch( postdata.target )
 		{
 			case "script":
-				this.__validate( postdata, "uuid" );
-
-				Model.Script.findOne(
-					{ uuid: postdata.uuid }, { comments: true }, ( e, data ) => {
-						if( this.__dbErr( e, callback ) ) return;
-
-						if( !data )
-						{
-							callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, postdata.uuid ) );
-							return;
-						}
-
-						var comm = new Model.Comment();
-						comm.content = postdata.content;
-						comm.author = this.App.Auth.user;
-
-						data.comments.push( comm );
-
-						// Save the comment first
-						// This ensure the associating script exists
-						comm.save( ( e ) => {
-							if( this.__dbErr( e, callback ) ) return;
-
-							// Then save the script
-							data.save( ( e2 ) => {
-								if( this.__dbErr( e2, callback ) ) return;
-								callback( this.App.JsonSuccess() );
-							} );
-
-						} );
-					}
-				);
-
+				model = "Script";
+				target = "comments";
+				crit_id.uuid = postdata.id;
 				break;
 
 			case "comment":
-				this.__validate( postdata, "id" );
+				model = "Comment";
+				target = "replies";
+
+				if( !ObjectId.isValid( postdata.id ) )
+					throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
+
+				crit_id._id = ObjectId( postdata.id );
 				break;
+
 			default:
 				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
 		}
+
+		Model[ model ].findOne(
+				crit_id, { comments: true, replies: true }, ( e, data ) => {
+				if( this.__dbErr( e, callback ) ) return;
+
+				if( !data )
+				{
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+					return;
+				}
+
+				var comm = new Model.Comment();
+				comm.content = postdata.content;
+				comm.author = this.App.Auth.user;
+
+				data[ target ].push( comm );
+
+				// Save the comment first
+				// This ensure the associating script exists
+				comm.save( ( e ) => {
+					if( this.__dbErr( e, callback ) ) return;
+
+					// Then save the script
+					data.save( ( e2 ) => {
+						if( this.__dbErr( e2, callback ) ) return;
+						callback( this.App.JsonSuccess() );
+					} );
+
+				} );
+			}
+		);
 	}
 
 	__in( postdata, criteria, ...fields )
@@ -313,7 +334,7 @@ class ScriptMananger
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, criteria.uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_SCRIPT, criteria.uuid ) );
 					return;
 				}
 
@@ -330,13 +351,13 @@ class ScriptMananger
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.UUID_NOT_RESERVED, uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.UUID_NOT_RESERVED, uuid ) );
 					return;
 				}
 
 				if( data.access_token != accessToken )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.ACCESS_DENIED ) );
+					callback( this.App.JsonError( Locale.ScriptManager.ACCESS_DENIED ) );
 					return;
 				}
 
@@ -355,7 +376,7 @@ class ScriptMananger
 		for( let i of fields )
 		{
 			if( !data[ i ] )
-				throw this.App.JsonError( Locale.GenericError.MISSING_PARAM, i );
+				throw this.App.JsonError( Locale.Error.MISSING_PARAM, i );
 		}
 	}
 
@@ -372,4 +393,4 @@ class ScriptMananger
 	}
 }
 
-module.exports = ScriptMananger;
+module.exports = ScriptManager;

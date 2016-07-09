@@ -62,7 +62,7 @@ goal "Script listing"
 
 		goal "Checking Search Results"
 		{
-			grep -q -e "Script 002.\+Script 004" $TempFile
+			grep -q -e "Script 004.\+Script 002" $TempFile
 			failthru $? "Script 002 & 004 should both appear in this search"
 
 			grep -vq "Script 001" $TempFile

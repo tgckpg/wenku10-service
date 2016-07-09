@@ -223,7 +223,7 @@ class ScriptManager
 	Comment( postdata, callback )
 	{
 		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Auth.ACCESS_DENIED );
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
 		Validation.NOT_EMPTY( postdata, "id", "target", "content" );
 

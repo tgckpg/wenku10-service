@@ -75,7 +75,7 @@ class ScriptMananger
 				var saneData = this.utils.refObj(
 					item
 					, "uuid", "name", "desc", "hits", "zone"
-					, "type" , "date_modified", "date_createod"
+					, "type" , "date_modified", "date_created"
 					, "history", "tags", "related", "draft"
 					, "public"
 				);
@@ -150,6 +150,117 @@ class ScriptMananger
 				} );
 			}
 		);
+	}
+
+	GetComments( postdata, callback )
+	{
+		this.__validate( postdata, "target" );
+		this.utils.use( "object", "math" );
+
+		switch( postdata.target )
+		{
+			case "script":
+				this.__validate( postdata, "uuid" );
+
+				var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+				var limit = this.utils.clamp( parseInt( postdata.limit ) || 30, 1, 100 );
+				var date_before = new Date( Date.now() );
+
+				// XXX: in mongodb 3.3.4, lookup can do arrays
+				// So it can save up 1 unwind step
+				Model.Script.aggregate([
+					{ $match: { uuid: postdata.uuid } }
+					, { $project: { _id: "$comments._id" } }
+					, { $unwind: "$_id" }
+					, { $lookup: { from: "comments", localField: "_id", foreignField: "_id", as: "data" } }
+					, { $unwind: "$data" }
+
+					// pagination
+					, { $match: { "data.date_created": { $lte: date_before } } }
+					, { $sort: { "data.date_created": -1 } }
+					, { $skip: skip }
+					, { $limit: limit }
+
+					// Find the associated user
+					, { $lookup: { from: "users", localField: "data.author", foreignField: "_id", as: "author" } }
+					, { $unwind: "$author" }
+
+					// Project finally
+					, { $project: {
+						"content": { $cond: {
+							if: "$data.enabled", then: "$data.content", else: "$data.remarks"
+						} }
+						, "replies": "$data.replies"
+						, "date_created": "$data.date_created"
+						, "date_modified": "$data.date_modified"
+						, "author._id": "$author._id"
+						, "author.name": "$author.profile.display_name"
+					} }
+				] ).exec( ( e, data ) => {
+					if( this.__dbErr( e, callback ) ) return;
+					callback( this.App.JsonSuccess( data ) );
+				} );
+
+				break;
+
+			case "comment":
+				this.__validate( postdata, "id" );
+				break;
+			default:
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+		}
+	}
+
+	Comment( postdata, callback )
+	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Auth.LOGIN_NEEDED );
+
+		this.__validate( postdata, "target", "content" );
+		switch( postdata.target )
+		{
+			case "script":
+				this.__validate( postdata, "uuid" );
+
+				Model.Script.findOne(
+					{ uuid: postdata.uuid }, { comments: true }, ( e, data ) => {
+						if( this.__dbErr( e, callback ) ) return;
+
+						if( !data )
+						{
+							callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, postdata.uuid ) );
+							return;
+						}
+
+						var comm = new Model.Comment();
+						comm.content = postdata.content;
+						comm.author = this.App.Auth.user;
+
+						data.comments.push( comm );
+
+						// Save the comment first
+						// This ensure the associating script exists
+						comm.save( ( e ) => {
+							if( this.__dbErr( e, callback ) ) return;
+
+							// Then save the script
+							data.save( ( e2 ) => {
+								if( this.__dbErr( e2, callback ) ) return;
+								callback( this.App.JsonSuccess() );
+							} );
+
+						} );
+					}
+				);
+
+				break;
+
+			case "comment":
+				this.__validate( postdata, "id" );
+				break;
+			default:
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+		}
 	}
 
 	__in( postdata, criteria, ...fields )

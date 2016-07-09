@@ -1,0 +1,105 @@
+#!/bin/bash
+function assert_params() {
+	goal "Parm Tests"
+	{
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]="NaN"
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]=""
+		. ./tests/assert_jfail
+		goalend
+	}
+}
+
+function assert_wrong_empty() {
+	assert_params
+
+	POSTDATA["target"]="script"
+	POSTDATA["uuid"]="$UUID"
+	. ./tests/assert_jsuccess
+}
+
+function assert_wrong_empty_auth() {
+	SEND_COOKIE=true
+	assert_params
+
+	SEND_COOKIE=false
+	POSTDATA["target"]="script"
+	POSTDATA["uuid"]="$UUID"
+	. ./tests/assert_jfail
+
+	SEND_COOKIE=true
+	. ./tests/assert_jsuccess
+	SEND_COOKIE=false
+}
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/001
+	. ./tests/assert_token_access
+	. ./tests/006_script_download
+	goalend
+}
+
+goal "Posting comment"
+{
+	. ./tests/002_login
+
+	goal "Posting 10 comments for $UUID"
+	{
+		for i in {1..10}; do
+			declare -A POSTDATA=(
+				["action"]="comment"
+				["content"]="Ok_this_is_the_content $i"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty_auth
+		done
+		goalend
+	}
+
+	goal "Checking posted comments"
+	{
+		goal "Default get-comment"
+		{
+			declare -A POSTDATA=(
+				["action"]="get-comment"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty
+			goalend
+		}
+
+		goal "Skip 1, limit 3 => 10 [ 9 8 7 ] 6 5 4 3 2 1"
+		{
+			declare -A POSTDATA=(
+				["action"]="get-comment"
+				["skip"]="1"
+				["limit"]="3"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty
+
+			if [ $( grep -o "Ok_this_is_the_content" $TempFile | wc -w ) -ne 3 ]; then
+				exitOk 1 "Number of expected comment count is wrong"
+			fi
+
+			grep -q -e "content 9.\+content 8.\+content 7.\+" $TempFile
+			failthru $? "Content 9, 8, 7 does not return in the expected order or does not returned properly"
+
+			goalend
+		}
+
+		goalend
+	}
+
+	. ./tests/003_logout
+
+	goalend
+}

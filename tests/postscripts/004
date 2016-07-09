@@ -3,7 +3,7 @@
 declare -A POSTDATA=(
 	["uuid"]="$UUID"
 	["action"]="upload"
-	["name"]="Script 003"
+	["name"]="Script 004"
 	["desc"]="Description of script 003 文"
 	["secret"]="What is my pet name"
 	["zone"]="隨機網文"

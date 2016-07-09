@@ -78,6 +78,11 @@ class App extends Base
 						break;
 
 					case "comment":
+						new ScriptManager( this ).Comment( e.Data, Render );
+						break;
+
+					case "get-comment":
+						new ScriptManager( this ).GetComments( e.Data, Render );
 						break;
 
 					case "search":

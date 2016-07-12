@@ -83,7 +83,7 @@ class Auth
 
 		if(!( currPasswd && newPasswd ))
 		{
-			throw this.App.JsonError( Locale.Auth.EMPTY_PASSWD );
+			throw new Error( "INTERNAL: Passwords cannot be empty" );
 		}
 
 		var session = this.Control.session;

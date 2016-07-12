@@ -1,11 +1,11 @@
 "use strict";
 
-
 const cl = global.botanLoader;
 const Dragonfly = global.Dragonfly;
 
 const Model = cl.load( "wen10srv.schema" );
 const Validation = cl.load( "wen10srv.Validation" );
+const DataSetter = cl.load( "wen10srv.DataSetter" );
 const Locale = cl.load( "botansx.modular.localization" );
 
 const ObjectId = require( "mongoose" ).Types.ObjectId;
@@ -35,22 +35,20 @@ class ScriptManager
 		} );
 	}
 
-	Upload( data, callback )
+	Upload( postdata, callback )
 	{
-		var user = data.anon ? null : this.App.Auth.user;
+		var user = postdata.anon ? null : this.App.Auth.user;
 
-		Validation.NOT_EMPTY( data, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
 
-		this.__edit( data.uuid, data.access_token, ( ScriptM ) => {
-			ScriptM.data = new Buffer( data.data );
-			ScriptM.desc = data.desc;
-			ScriptM.name = data.name;
-			ScriptM.secret = data.secret;
-			ScriptM.author = user;
+		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
+			item.data = new Buffer( postdata.data );
+			item.desc = postdata.desc;
+			item.name = postdata.name;
+			item.secret = postdata.secret;
+			item.author = user;
 
-			if( data.zone ) ScriptM.zone.push( data.zone.split( "\n" ) );
-			if( data.type ) ScriptM.type.push( data.type.split( "\n" ) );
-			if( data.tags ) ScriptM.tags.push( data.tags.split( "\n" ) );
+			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
 
 		}, callback );
 	}
@@ -159,7 +157,6 @@ class ScriptManager
 	GetComments( postdata, callback )
 	{
 		Validation.NOT_EMPTY( postdata, "id", "target" );
-		this.utils.use( "object", "math" );
 
 		var pipelines = [];
 		var model;
@@ -182,6 +179,7 @@ class ScriptManager
 				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
 		}
 
+		this.utils.use( "math" );
 		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
 		var limit = this.utils.clamp( parseInt( postdata.limit ) || 30, 1, 100 );
 		var date_before = new Date( Date.now() );
@@ -289,8 +287,10 @@ class ScriptManager
 	{
 		for( let field of fields )
 		{
-			if( postdata[ field ] )
-				criteria[ field ] = { $in: postdata[ field ].split( "\n" ) };
+			var v = postdata[ field ];
+			if( !v ) continue;
+
+			criteria[ field ] = { $in: Array.isArray( v ) ? v : [ v ] };
 		}
 	}
 

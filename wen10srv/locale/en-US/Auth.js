@@ -3,5 +3,4 @@ module.exports = {
 	, "ALREADY_LOGGED_IN": "You are already logged in"
 	, "AUTH_FAILED": "Username or password is wrong"
 	, "UNAUTHORIZED": "Unauthorized"
-	, "EMPTY_PASSWD": "Password cannot be empty"
 };

@@ -28,8 +28,12 @@ mongoose.model( "users", {} ).remove({}, function( err )
 	mongoose.model( "scripts", {} ).remove({}, function( err )
 	{
 		ThrowEverything( err );
-
 		console.log( "Dropped Collection Scirpts" );
-		process.exit(0);
+		mongoose.model( "comments", {} ).remove({}, function( err )
+		{
+			ThrowEverything( err );
+			console.log( "Dropped Collection Comments" );
+			process.exit(0);
+		});
 	});
 });

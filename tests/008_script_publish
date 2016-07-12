@@ -14,7 +14,7 @@ goal "Publish script"
 	goal "Checking published state"
 	{
 		declare -A POSTDATA=(
-			["action"]="list"
+			["action"]="search"
 			["lang"]="$RLANG"
 		)
 

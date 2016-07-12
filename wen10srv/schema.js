@@ -34,7 +34,7 @@ var M_Script = new Schema({
 	, zone: [ String ]
 	, type: [ String ]
 	, date_modified: { type: Date, default: Date.now }
-	, date_createod: { type: Date, default: Date.now }
+	, date_created: { type: Date, default: Date.now }
 	, history: [{ desc: String, itworks: Boolean, date: Date }]
 	, comments: [ R_Comment ]
 	, tags: [ String ]
@@ -71,7 +71,7 @@ var M_Comment = new Schema({
 	, content: String
 	, date_modified: { type: Date, default: Date.now }
 	, date_created: { type: Date, default: Date.now }
-	, enabled: Boolean
+	, enabled: { type: Boolean, default: true }
 	, remarks: String
 	, replies: [ R_Comment ]
 });

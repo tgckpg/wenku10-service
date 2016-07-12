@@ -1,0 +1,176 @@
+#!/bin/bash
+function assert_params() {
+	goal "Parm Tests"
+	{
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]="NaN"
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]=""
+		. ./tests/assert_jfail
+		goalend
+	}
+}
+
+function assert_wrong_empty() {
+	assert_params
+
+	POSTDATA["target"]="$1"
+	POSTDATA["id"]="$2"
+	. ./tests/assert_jsuccess
+}
+
+function assert_wrong_empty_auth() {
+	SEND_COOKIE=true
+	assert_params
+
+	SEND_COOKIE=false
+	POSTDATA["target"]="$1"
+	POSTDATA["id"]="$2"
+	. ./tests/assert_jfail
+
+	SEND_COOKIE=true
+	. ./tests/assert_jsuccess
+	SEND_COOKIE=false
+}
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/001
+	. ./tests/assert_token_access
+	. ./tests/006_script_download
+	goalend
+}
+
+goal "Posting comment"
+{
+	. ./tests/002_login
+
+	goal "Posting 10 comments for $UUID"
+	{
+		for i in {1..10}; do
+			declare -A POSTDATA=(
+				["action"]="comment"
+				["content"]="Ok_this_is_the_content $i"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty_auth "script" $UUID
+		done
+		goalend
+	}
+
+	goal "Checking posted comments"
+	{
+		goal "Default get-comment"
+		{
+			declare -A POSTDATA=(
+				["action"]="get-comment"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty "script" $UUID
+			goalend
+		}
+
+		goal "Skip 1, limit 3 => 10 [ 9 8 7 ] 6 5 4 3 2 1"
+		{
+			declare -A POSTDATA=(
+				["action"]="get-comment"
+				["skip"]="1"
+				["limit"]="3"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty "script" $UUID
+
+			if [ $( grep -o "Ok_this_is_the_content" $TempFile | wc -w ) -ne 3 ]; then
+				exitOk 1 "Number of expected comment count is wrong"
+			fi
+
+			grep -q -e "content 9.\+content 8.\+content 7.\+" $TempFile
+			failthru $? "Content 9, 8, 7 does not return in the expected order or does not returned properly"
+
+			goalend
+		}
+
+		goalend
+	}
+
+	goal "Posting replies"
+	{
+		goal "Getting 1 comment"
+		{
+			declare -A POSTDATA=(
+				["action"]="get-comment"
+				["limit"]="1"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty "script" $UUID
+
+			goalend
+		}
+
+		CID=$( grep '"data":\[{"_id":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data:\\[{_id://g" )
+
+		goal "Posting 10 replies for $CID"
+		{
+			for i in {1..10}; do
+				declare -A POSTDATA=(
+					["action"]="comment"
+					["content"]="Ok_this_is_the_reply $i"
+					["lang"]="$RLANG"
+				)
+
+				assert_wrong_empty_auth "comment" $CID
+			done
+			goalend
+		}
+
+		goal "Checking posted replies"
+		{
+			goal "Default get-comment"
+			{
+				declare -A POSTDATA=(
+					["action"]="get-comment"
+					["lang"]="$RLANG"
+				)
+
+				assert_wrong_empty "comment" $CID
+				goalend
+			}
+
+			goal "Skip 4, limit 4 => 10 9 8 7 [ 6 5 4 3 ] 2 1"
+			{
+				declare -A POSTDATA=(
+					["action"]="get-comment"
+					["skip"]="4"
+					["limit"]="4"
+					["lang"]="$RLANG"
+				)
+
+				assert_wrong_empty "comment" $CID
+
+				if [ $( grep -o "Ok_this_is_the_reply" $TempFile | wc -w ) -ne 4 ]; then
+					exitOk 1 "Number of expected replies is wrong"
+				fi
+
+				grep -q -e "reply 6.\+reply 5.\+reply 4.\+reply 3" $TempFile
+				failthru $? "Reply 6, 5, 4, 3 does not return in the expected order or does not returned properly"
+
+				goalend
+			}
+
+			goalend
+		}
+
+		goalend
+	}
+
+	. ./tests/003_logout
+
+	goalend
+}

@@ -4,9 +4,13 @@ const cl = global.botanLoader;
 const Dragonfly = global.Dragonfly;
 
 const Model = cl.load( "wen10srv.schema" );
+const Validation = cl.load( "wen10srv.Validation" );
+const DataSetter = cl.load( "wen10srv.DataSetter" );
 const Locale = cl.load( "botansx.modular.localization" );
 
-class ScriptMananger
+const ObjectId = require( "mongoose" ).Types.ObjectId;
+
+class ScriptManager
 {
 	constructor( App )
 	{
@@ -16,7 +20,7 @@ class ScriptMananger
 
 	ReserveUuid( data, callback )
 	{
-		this.__validate( data, "access_token" );
+		Validation.NOT_EMPTY( data, "access_token" );
 
 		this.utils.use( "random" );
 		var uuid = this.utils.uuid();
@@ -31,22 +35,20 @@ class ScriptMananger
 		} );
 	}
 
-	Upload( data, callback )
+	Upload( postdata, callback )
 	{
-		var user = data.anon ? null : this.App.Auth.user;
+		var user = postdata.anon ? null : this.App.Auth.user;
 
-		this.__validate( data, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
 
-		this.__edit( data.uuid, data.access_token, ( ScriptM ) => {
-			ScriptM.data = new Buffer( data.data );
-			ScriptM.desc = data.desc;
-			ScriptM.name = data.name;
-			ScriptM.secret = data.secret;
-			ScriptM.author = user;
+		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
+			item.data = new Buffer( postdata.data );
+			item.desc = postdata.desc;
+			item.name = postdata.name;
+			item.secret = postdata.secret;
+			item.author = user;
 
-			if( data.zone ) ScriptM.zone.push( data.zone.split( "\n" ) );
-			if( data.type ) ScriptM.type.push( data.type.split( "\n" ) );
-			if( data.tags ) ScriptM.tags.push( data.tags.split( "\n" ) );
+			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
 
 		}, callback );
 	}
@@ -75,7 +77,7 @@ class ScriptMananger
 				var saneData = this.utils.refObj(
 					item
 					, "uuid", "name", "desc", "hits", "zone"
-					, "type" , "date_modified", "date_createod"
+					, "type" , "date_modified", "date_created"
 					, "history", "tags", "related", "draft"
 					, "public"
 				);
@@ -88,12 +90,13 @@ class ScriptMananger
 			callback( this.App.JsonSuccess( output ) );
 		} )
 			.populate( "author" )
+			.sort({ date_created: -1 })
 			.skip( skip ).limit( limit );
 	}
 
 	Publish( postdata, callback )
 	{
-		this.__validate( postdata, "uuid", "access_token", "public" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "public" );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( data ) => {
 
@@ -110,7 +113,7 @@ class ScriptMananger
 
 	Download( postdata, callback )
 	{
-		this.__validate( postdata, "uuid" );
+		Validation.NOT_EMPTY( postdata, "uuid" );
 
 		var criteria = { uuid: postdata.uuid };
 		this.__privateAccess( postdata, criteria );
@@ -126,7 +129,7 @@ class ScriptMananger
 
 	Remove( postdata, callback )
 	{
-		this.__validate( postdata, "uuid", "access_token" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token" );
 
 		Model.Script.findOne(
 			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
@@ -134,13 +137,13 @@ class ScriptMananger
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_SCRIPT, uuid ) );
 					return;
 				}
 
 				if( data.access_token != postdata.access_token )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.ACCESS_DENIED ) );
+					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 					return;
 				}
 
@@ -152,12 +155,143 @@ class ScriptMananger
 		);
 	}
 
+	GetComments( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "id", "target" );
+
+		var pipelines = [];
+		var model;
+
+		switch( postdata.target )
+		{
+			case "script":
+				model = "Script";
+				pipelines.push({ $match: { uuid: postdata.id } });
+				pipelines.push({ $project: { _id: "$comments" } });
+				break;
+
+			case "comment":
+				model = "Comment";
+				pipelines.push({ $match: { _id: ObjectId( postdata.id ) } });
+				pipelines.push({ $project: { _id: "$replies" } });
+				break;
+
+			default:
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+		}
+
+		this.utils.use( "math" );
+		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+		var limit = this.utils.clamp( parseInt( postdata.limit ) || 30, 1, 100 );
+		var date_before = new Date( Date.now() );
+
+		// XXX: in mongodb 3.3.4, lookup can do arrays
+		// So we may save up 1 unwind step when it released
+		pipelines.push({ $unwind: "$_id" });
+		pipelines.push({ $lookup: { from: "comments", localField: "_id", foreignField: "_id", as: "data" } });
+		pipelines.push({ $unwind: "$data" });
+
+		// pagination
+		pipelines.push({ $match: { "data.date_created": { $lte: date_before } } });
+		pipelines.push({ $sort: { "data.date_created": -1 } });
+		pipelines.push({ $skip: skip });
+		pipelines.push({ $limit: limit });
+
+		// Find the associated user
+		pipelines.push({ $lookup: { from: "users", localField: "data.author", foreignField: "_id", as: "author" } });
+		pipelines.push({ $unwind: "$author" });
+
+		// Project finally
+		pipelines.push({ $project: {
+			"content": { $cond: {
+				if: "$data.enabled", then: "$data.content", else: "$data.remarks"
+			} }
+			, "replies": "$data.replies"
+			, "date_created": "$data.date_created"
+			, "date_modified": "$data.date_modified"
+			, "author._id": "$author._id"
+			, "author.name": "$author.profile.display_name"
+		} });
+
+		Model[ model ].aggregate( pipelines ).exec( ( e, data ) => {
+			if( this.__dbErr( e, callback ) ) return;
+			callback( this.App.JsonSuccess( data ) );
+		} );
+	}
+
+	Comment( postdata, callback )
+	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+
+		Validation.NOT_EMPTY( postdata, "id", "target", "content" );
+
+		var crit_id = {};
+		var model;
+		var target;
+
+		switch( postdata.target )
+		{
+			case "script":
+				model = "Script";
+				target = "comments";
+				crit_id.uuid = postdata.id;
+				break;
+
+			case "comment":
+				model = "Comment";
+				target = "replies";
+
+				if( !ObjectId.isValid( postdata.id ) )
+					throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
+
+				crit_id._id = ObjectId( postdata.id );
+				break;
+
+			default:
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+		}
+
+		Model[ model ].findOne(
+				crit_id, { comments: true, replies: true }, ( e, data ) => {
+				if( this.__dbErr( e, callback ) ) return;
+
+				if( !data )
+				{
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+					return;
+				}
+
+				var comm = new Model.Comment();
+				comm.content = postdata.content;
+				comm.author = this.App.Auth.user;
+
+				data[ target ].push( comm );
+
+				// Save the comment first
+				// This ensure the associating script exists
+				comm.save( ( e ) => {
+					if( this.__dbErr( e, callback ) ) return;
+
+					// Then save the script
+					data.save( ( e2 ) => {
+						if( this.__dbErr( e2, callback ) ) return;
+						callback( this.App.JsonSuccess() );
+					} );
+
+				} );
+			}
+		);
+	}
+
 	__in( postdata, criteria, ...fields )
 	{
 		for( let field of fields )
 		{
-			if( postdata[ field ] )
-				criteria[ field ] = { $in: postdata[ field ].split( "\n" ) };
+			var v = postdata[ field ];
+			if( !v ) continue;
+
+			criteria[ field ] = { $in: Array.isArray( v ) ? v : [ v ] };
 		}
 	}
 
@@ -202,7 +336,7 @@ class ScriptMananger
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.NO_SUCH_SCRIPT, criteria.uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_SCRIPT, criteria.uuid ) );
 					return;
 				}
 
@@ -219,13 +353,13 @@ class ScriptMananger
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.UUID_NOT_RESERVED, uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.UUID_NOT_RESERVED, uuid ) );
 					return;
 				}
 
 				if( data.access_token != accessToken )
 				{
-					callback( this.App.JsonError( Locale.ScriptMananger.ACCESS_DENIED ) );
+					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 					return;
 				}
 
@@ -237,15 +371,6 @@ class ScriptMananger
 				} );
 			}
 		);
-	}
-
-	__validate( data, ...fields )
-	{
-		for( let i of fields )
-		{
-			if( !data[ i ] )
-				throw this.App.JsonError( Locale.GenericError.MISSING_PARAM, i );
-		}
 	}
 
 	__dbErr( err, callback )
@@ -261,4 +386,4 @@ class ScriptMananger
 	}
 }
 
-module.exports = ScriptMananger;
+module.exports = ScriptManager;

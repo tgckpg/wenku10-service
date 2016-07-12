@@ -119,9 +119,12 @@ class ScriptManager
 		this.__privateAccess( postdata, criteria );
 
 		this.__get(
-			criteria, { data: true }
+			criteria, { data: true, hits: true }
 			, ( e ) => {
 				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
+
+				e.hits ++;
+				e.save();
 			}
 			, callback
 		);
@@ -291,7 +294,7 @@ class ScriptManager
 			var v = postdata[ field ];
 			if( !v ) continue;
 
-			criteria[ field ] = { $in: Array.isArray( v ) ? v : [ v ] };
+			criteria[ field ] = { $in: Array.isArray( v ) ? v : [ new RegExp( v, "gi" ) ] };
 		}
 	}
 
@@ -302,7 +305,7 @@ class ScriptManager
 			for( let field of fields )
 			{
 				if( postdata[ field ] )
-					criteria[ field ] = new RegExp( postdata[ field ], "g" );
+					criteria[ field ] = new RegExp( postdata[ field ], "gi" );
 			}
 		}
 		catch( ex )

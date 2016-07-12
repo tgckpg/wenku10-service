@@ -90,6 +90,7 @@ class ScriptManager
 			callback( this.App.JsonSuccess( output ) );
 		} )
 			.populate( "author" )
+			.sort({ date_created: -1 })
 			.skip( skip ).limit( limit );
 	}
 

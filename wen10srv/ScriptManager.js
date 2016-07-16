@@ -122,7 +122,7 @@ class ScriptManager
 				callback( this.App.JsonSuccess() );
 			} );
 
-		}, callback, { public: 1, draft: 1 } );
+		}, callback, { public: 1, draft: 1, access_token: 1 } );
 	}
 
 	Download( postdata, callback )

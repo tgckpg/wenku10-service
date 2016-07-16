@@ -53,6 +53,20 @@ class ScriptManager
 		}, callback );
 	}
 
+	PushStatus( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "uuid", "type" );
+
+		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
+
+			item.history.push({
+				desc: postdata.desc || ""
+				, status: postdata.type
+			});
+
+		}, callback, { history: 1 } );
+	}
+
 	Search( postdata, callback )
 	{
 		var criteria = {};
@@ -108,7 +122,7 @@ class ScriptManager
 				callback( this.App.JsonSuccess() );
 			} );
 
-		}, callback );
+		}, callback, { public: 1, draft: 1 } );
 	}
 
 	Download( postdata, callback )
@@ -348,10 +362,13 @@ class ScriptManager
 		);
 	}
 
-	__edit( uuid, accessToken, editCallback, callback )
+	__edit( uuid, accessToken, editCallback, callback, fields )
 	{
+		if( fields == undefined )
+			fields = { comment: 0, history: 0 };
+
 		Model.Script.findOne(
-			{ uuid: uuid }, { comment: 0, history: 0 }, ( e, data ) => {
+			{ uuid: uuid }, fields, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -380,6 +397,16 @@ class ScriptManager
 	{
 		if( err )
 		{
+			if( err.name == "ValidationError" )
+			{
+				for( let i in err.errors )
+				{
+					var e = err.errors[i];
+					callback( this.App.JsonError( Locale.Error.INVALID_PARAM, e.path, e.value ) );
+					return true;
+				}
+			}
+
 			Dragonfly.Error( err );
 			callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
 			return true;

@@ -35,7 +35,11 @@ var M_Script = new Schema({
 	, type: [ String ]
 	, date_modified: { type: Date, default: Date.now }
 	, date_created: { type: Date, default: Date.now }
-	, history: [{ desc: String, itworks: Boolean, date: Date }]
+	, history: [{
+		desc: String
+		, status: Number
+		, date: { type: Date, default: Date.now }
+	}]
 	, comments: [ R_Comment ]
 	, tags: [ String ]
 	, related: [ R_Script ]

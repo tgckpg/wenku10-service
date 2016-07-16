@@ -99,6 +99,10 @@ class App extends Base
 						new ScriptManager( this ).ReserveUuid( e.Data, Render );
 						break;
 
+					case "status-report":
+						new ScriptManager( this ).PushStatus( e.Data, Render );
+						break;
+
 					case "upload":
 						new ScriptManager( this ).Upload( e.Data, Render );
 						break;

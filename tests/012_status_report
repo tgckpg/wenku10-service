@@ -1,0 +1,44 @@
+#!/bin/bash
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/001
+	. ./tests/assert_token_access
+	. ./tests/006_script_download
+	goalend
+}
+
+goal "Reporting status"
+{
+
+	goal "Without proper param: type, desc"
+	{
+		declare -A POSTDATA=(
+			["action"]="status-report"
+			["uuid"]=$UUID
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "With wrong data types"
+	{
+		POSTDATA["type"]="abc"
+		POSTDATA["desc"]="This is the status desc"
+
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "With proper values"
+	{
+		POSTDATA["type"]="1"
+		. ./tests/assert_jsuccess
+		goalend
+	}
+
+	goalend
+}

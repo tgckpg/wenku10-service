@@ -59,10 +59,21 @@ class ScriptManager
 
 		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
 
-			item.history.push({
-				desc: postdata.desc || ""
-				, status: postdata.type
-			});
+			var firstItem = item.history[0];
+			var Desc =  "\n" + ( postdata.desc || "" ).replace( "\n", " " );
+
+			if( firstItem && firstItem.status == postdata.type )
+			{
+				firstItem.date = Date.now();
+				firstItem.desc = ( firstItem.desc + Desc ).trim();
+			}
+			else
+			{
+				item.history.push({
+					desc: Desc.trim()
+					, status: postdata.type
+				});
+			}
 
 		}, callback, { history: 1 } );
 	}

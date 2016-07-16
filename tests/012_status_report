@@ -3,7 +3,7 @@
 goal "Upload Script" 
 {
 	. ./tests/004_reserve_uuid
-	. ./tests/postscripts/001
+	. ./tests/postscripts/for_test_012
 	. ./tests/assert_token_access
 	. ./tests/006_script_download
 	goalend
@@ -27,7 +27,7 @@ goal "Reporting status"
 	goal "With wrong data types"
 	{
 		POSTDATA["type"]="abc"
-		POSTDATA["desc"]="This is the status desc"
+		POSTDATA["desc"]="STATUS_DESC_1"
 
 		. ./tests/assert_jfail
 		goalend
@@ -37,6 +37,36 @@ goal "Reporting status"
 	{
 		POSTDATA["type"]="1"
 		. ./tests/assert_jsuccess
+		goalend
+	}
+
+	goal "Repeat reporting should update the date only"
+	{
+		POSTDATA["type"]="1"
+		POSTDATA["desc"]="STATUS_DESC_2"
+		. ./tests/assert_jsuccess
+		goalend
+	}
+
+	goal "Validate pushed Results"
+	{
+		goal "Searching Pushed script"
+		{
+			declare -A POSTDATA=(
+				["action"]="search"
+				["name"]="TEST012"
+				["access_token"]="$ACCESS_TOKEN"
+				["uuid"]=$UUID
+				["lang"]="$RLANG"
+			)
+			. ./tests/assert_jsuccess
+
+			goalend
+		}
+
+		grep -q '"desc":"STATUS_DESC_1\\nSTATUS_DESC_2"' $TempFile
+		failthru $? "History desc does not match"
+
 		goalend
 	}
 

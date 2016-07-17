@@ -84,7 +84,7 @@ class ScriptManager
 
 		var fields = { comments: false, access_token: false, data: false };
 
-		this.__stringSearch( postdata, criteria, "name", "desc" );
+		this.__stringSearch( postdata, criteria, "name", "desc", "uuid" );
 		this.__privateAccess( postdata, criteria );
 		this.__in( postdata, criteria, "zone", "type", "tags" );
 		this.utils.use( "object", "math" );

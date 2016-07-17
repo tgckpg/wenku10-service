@@ -64,6 +64,7 @@ var M_User = new Schema({
 	name: { type: String , unique: true }
 
 	, password: String
+	, email: String
 	, active: { type: Boolean, default: true }
 	, profile: {
 		display_name: String, email: String

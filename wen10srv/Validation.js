@@ -12,6 +12,8 @@ class ValidationError
 	}
 }
 
+var EmailRe = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+
 class Validation
 {
 	static NOT_EMPTY( data, ...fields )
@@ -29,7 +31,7 @@ class Validation
 	static PASSWD( pass )
 	{
 		if( Array.isArray( pass ) )
-			throw new ValidationError( Locale.INVALID_PARAM.INVALID_PARAM, "Password", pass );
+			throw new ValidationError( Locale.Validation.INVALID_PARAM, "Password", pass );
 
 		if( pass.length < 8 )
 			throw new ValidationError( Locale.Validation.PASS_TOO_SHORT, 8 );
@@ -37,6 +39,12 @@ class Validation
 		if( pass.replace( "12345678", "" ).length < 4
 			|| pass.replace( pass[0], "" ).length < 3 )
 			throw new ValidationError( Locale.Validation.PASS_IS_A_JOKE );
+	}
+
+	static EMAIL( email )
+	{
+		if( !EmailRe.test( email ) )
+			throw new ValidationError( Locale.Validation.INVALID_EMAIL );
 	}
 }
 

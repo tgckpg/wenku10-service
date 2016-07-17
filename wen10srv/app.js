@@ -73,8 +73,9 @@ class App extends Base
 						return;
 
 					case "register":
-						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
+						Validation.NOT_EMPTY( e.Data, "user", "passwd", "email" );
 						Validation.PASSWD( e.Data.passwd );
+						Validation.EMAIL( e.Data.email );
 						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
 						return;
 

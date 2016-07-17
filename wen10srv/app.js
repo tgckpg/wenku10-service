@@ -63,6 +63,10 @@ class App extends Base
 				// Auth Scope
 				switch( e.Data.action )
 				{
+					case "session-valid":
+						Render( new JsonProto( null, this.Auth.LoggedIn, "OK" ) );
+						return;
+
 					case "login":
 						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
 						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );

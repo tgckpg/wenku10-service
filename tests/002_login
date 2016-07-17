@@ -34,3 +34,14 @@ goal "Account Login ( already logged in )"
 	. ./tests/assert_jfail
 	goalend
 }
+
+goal "Session check"
+{
+	declare -A POSTDATA=(
+		["action"]="session-valid"
+		["lang"]="$RLANG"
+	)
+
+	. ./tests/assert_jsuccess
+	goalend
+}

@@ -1,5 +1,5 @@
 module.exports = {
-	"MISSING_PARAM": "所雖參數 \"%s\" 缺失"
+	"MISSING_PARAM": "所需參數 \"%s\" 缺失"
 	, "CANNOT_BE_EMPTY": "\"%s\" 不能為空"
 	, "PASS_TOO_SHORT": "密碼太短( < %s )"
 	, "PASS_IS_A_JOKE": "這樣的密碼不行吧"

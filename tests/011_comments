@@ -1,6 +1,6 @@
 #!/bin/bash
 function assert_params() {
-	goal "Parm Tests"
+	goal "Param Tests"
 	{
 		. ./tests/assert_jfail
 

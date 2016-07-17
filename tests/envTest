@@ -28,6 +28,7 @@ function failthru() {
 			echo "$2: failed" | INDENT $LEVEL
 			if [ -f "$TempFile" ]; then
 				cat $TempFile | INDENT $LEVEL
+				echo
 			fi
 		fi
 		exit 1

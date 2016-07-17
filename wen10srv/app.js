@@ -60,60 +60,44 @@ class App extends Base
 
 			try
 			{
+				// Auth Scope
 				switch( e.Data.action )
 				{
 					case "login":
 						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
 						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
-						break;
+						return;
 
 					case "logout":
 						this.Auth.DeAuth( Render );
-						break;
+						return;
 
 					case "register":
 						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
 						Validation.PASSWD( e.Data.passwd );
 						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
-						break;
+						return;
 
 					case "passwd":
 						Validation.NOT_EMPTY( e.Data, "curr", "new" );
 						Validation.PASSWD( e.Data.new );
 						this.Auth.ChangePasswd( e.Data.curr, e.Data.new, Render );
-						break;
+						return;
+				}
 
-					case "comment":
-						new ScriptManager( this ).Comment( e.Data, Render );
-						break;
-
-					case "get-comment":
-						new ScriptManager( this ).GetComments( e.Data, Render );
-						break;
-
-					case "search":
-						new ScriptManager( this ).Search( e.Data, Render );
-						break;
-
-					case "reserve-uuid":
-						new ScriptManager( this ).ReserveUuid( e.Data, Render );
-						break;
-
-					case "upload":
-						new ScriptManager( this ).Upload( e.Data, Render );
-						break;
-
-					case "download":
-						new ScriptManager( this ).Download( e.Data, Render );
-						break;
-
-					case "remove":
-						new ScriptManager( this ).Remove( e.Data, Render );
-						break;
-
-					case "publish":
-						new ScriptManager( this ).Publish( e.Data, Render );
-						break;
+				// ScriptManager Scope
+				var mgr = new ScriptManager( this );
+				switch( e.Data.action )
+				{
+					case "comment"       : mgr.Comment( e.Data, Render ); return;
+					case "get-comment"   : mgr.GetComments( e.Data, Render ); return;
+					case "search"        : mgr.Search( e.Data, Render ); return;
+					case "reserve-uuid"  : mgr.ReserveUuid( e.Data, Render ); return;
+					case "status-report" : mgr.PushStatus( e.Data, Render ); return;
+					case "upload"        : mgr.Upload( e.Data, Render ); return;
+					case "download"      : mgr.Download( e.Data, Render ); return;
+					case "remove"        : mgr.Remove( e.Data, Render ); return;
+					case "publish"       : mgr.Publish( e.Data, Render ); return;
 
 					default:
 						throw this.JsonError( Locale.Error.NO_SUCH_ACTION, e.Data.action );

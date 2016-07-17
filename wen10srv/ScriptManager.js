@@ -53,25 +53,44 @@ class ScriptManager
 		}, callback );
 	}
 
+	PushStatus( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "uuid", "type" );
+
+		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
+
+			var firstItem = item.history[0];
+			var Desc =  "\n" + ( postdata.desc || "" ).replace( "\n", " " );
+
+			if( firstItem && firstItem.status == postdata.type )
+			{
+				firstItem.date = Date.now();
+				firstItem.desc = ( firstItem.desc + Desc ).trim();
+			}
+			else
+			{
+				item.history.push({
+					desc: Desc.trim()
+					, status: postdata.type
+				});
+			}
+
+		}, callback, { history: 1 } );
+	}
+
 	Search( postdata, callback )
 	{
 		var criteria = {};
-
 		var fields = { comments: false, access_token: false, data: false };
 
-		this.__stringSearch( postdata, criteria, "name", "desc" );
 		this.__privateAccess( postdata, criteria );
-		this.__in( postdata, criteria, "zone", "type", "tags" );
-		this.utils.use( "object", "math" );
 
-		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
-		var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
-
-		Model.Script.find( criteria, fields, ( err, items ) => {
+		var extract = ( err, items ) => {
 			if( this.__dbErr( err, callback ) ) return;
 
 			var output = [];
 
+			this.utils.use( "object" );
 			for( let item of items )
 			{
 				var saneData = this.utils.refObj(
@@ -88,10 +107,32 @@ class ScriptManager
 			}
 
 			callback( this.App.JsonSuccess( output ) );
-		} )
-			.populate( "author" )
-			.sort({ date_created: -1 })
-			.skip( skip ).limit( limit );
+		};
+
+		// UUID search should be fast
+		if( postdata.uuid )
+		{
+			criteria.uuid = postdata.uuid;
+			Model.Script.findOne(
+				criteria, fields
+				, ( e, data ) => extract( e, data ? [ data ] : [] )
+			).populate( "author" );
+		}
+		else
+		{
+			this.utils.use( "math" );
+
+			var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+			var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
+
+			this.__stringSearch( postdata, criteria, "name", "desc" );
+			this.__in( postdata, criteria, "zone", "type", "tags" );
+
+			Model.Script.find( criteria, fields, extract )
+				.populate( "author" )
+				.sort({ date_created: -1 })
+				.skip( skip ).limit( limit );
+		}
 	}
 
 	Publish( postdata, callback )
@@ -108,7 +149,7 @@ class ScriptManager
 				callback( this.App.JsonSuccess() );
 			} );
 
-		}, callback );
+		}, callback, { public: 1, draft: 1, access_token: 1 } );
 	}
 
 	Download( postdata, callback )
@@ -119,9 +160,12 @@ class ScriptManager
 		this.__privateAccess( postdata, criteria );
 
 		this.__get(
-			criteria, { data: true }
+			criteria, { data: true, hits: true }
 			, ( e ) => {
 				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
+
+				e.hits ++;
+				e.save();
 			}
 			, callback
 		);
@@ -291,7 +335,7 @@ class ScriptManager
 			var v = postdata[ field ];
 			if( !v ) continue;
 
-			criteria[ field ] = { $in: Array.isArray( v ) ? v : [ v ] };
+			criteria[ field ] = { $in: Array.isArray( v ) ? v : [ new RegExp( v, "gi" ) ] };
 		}
 	}
 
@@ -302,7 +346,7 @@ class ScriptManager
 			for( let field of fields )
 			{
 				if( postdata[ field ] )
-					criteria[ field ] = new RegExp( postdata[ field ], "g" );
+					criteria[ field ] = new RegExp( postdata[ field ], "gi" );
 			}
 		}
 		catch( ex )
@@ -345,10 +389,13 @@ class ScriptManager
 		);
 	}
 
-	__edit( uuid, accessToken, editCallback, callback )
+	__edit( uuid, accessToken, editCallback, callback, fields )
 	{
+		if( fields == undefined )
+			fields = { comment: 0, history: 0 };
+
 		Model.Script.findOne(
-			{ uuid: uuid }, { comment: 0, history: 0 }, ( e, data ) => {
+			{ uuid: uuid }, fields, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -377,6 +424,16 @@ class ScriptManager
 	{
 		if( err )
 		{
+			if( err.name == "ValidationError" )
+			{
+				for( let i in err.errors )
+				{
+					var e = err.errors[i];
+					callback( this.App.JsonError( Locale.Error.INVALID_PARAM, e.path, e.value ) );
+					return true;
+				}
+			}
+
 			Dragonfly.Error( err );
 			callback( this.App.JsonError( Locale.System.DATABASE_ERROR ) );
 			return true;

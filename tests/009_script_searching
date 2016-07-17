@@ -138,5 +138,22 @@ goal "Script listing"
 		goalend
 	}
 
+	goal "Searching for uuid"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["uuid"]=$UUID
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		if [ $( grep -o '"uuid"' $TempFile | wc -w ) -ne 1 ]; then
+			exitOk 1 "Number of expected search result is wrong"
+		fi
+
+		goalend
+	}
+
 	goalend
 }

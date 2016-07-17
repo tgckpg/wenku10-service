@@ -199,7 +199,7 @@ class ScriptManager
 		);
 	}
 
-	GetComments( postdata, callback )
+	GetComments( postdata, callback, level )
 	{
 		Validation.NOT_EMPTY( postdata, "id", "target" );
 
@@ -216,7 +216,17 @@ class ScriptManager
 
 			case "comment":
 				model = "Comment";
-				pipelines.push({ $match: { _id: ObjectId( postdata.id ) } });
+
+				var targets = Array.isArray( postdata.id )
+					? postdata.id : [ postdata.id ];
+
+				var selected = [];
+				for( let i of targets )
+				{
+					selected.push( ObjectId( i ) );
+				}
+
+				pipelines.push({ $match: { _id: { $in: selected } } });
 				pipelines.push({ $project: { _id: "$replies" } });
 				break;
 
@@ -259,7 +269,53 @@ class ScriptManager
 
 		Model[ model ].aggregate( pipelines ).exec( ( e, data ) => {
 			if( this.__dbErr( e, callback ) ) return;
-			callback( this.App.JsonSuccess( data ) );
+
+			var NResolv = 0;
+			var PendingResolv = {};
+
+			if( 0 < level )
+			for( let d of data )
+			{
+				if( 0 < d.replies.length )
+				{
+					PendingResolv[ d._id ] = d;
+					NResolv ++;
+				}
+			}
+
+			// Resolve comments recursively
+			if( 0 < NResolv )
+			{
+				var ResolveReplies = ( e ) => {
+					for( let d of e.data )
+					{
+						for( let i in PendingResolv )
+						{
+							var item = PendingResolv[i];
+							var idx = item.replies.findIndex( x => d._id.equals( x ) );
+
+							if( ~idx )
+							{
+								item.replies[ idx ] = d;
+								break;
+							}
+						}
+					}
+
+					callback( this.App.JsonSuccess( data ) );
+				};
+
+				this.GetComments(
+					{ target: "comment", id: Object.keys( PendingResolv ) }
+					// e: JsonStatus
+					, ResolveReplies 
+					, level - 1
+				);
+			}
+			else
+			{
+				callback( this.App.JsonSuccess( data ) );
+			}
 		} );
 	}
 

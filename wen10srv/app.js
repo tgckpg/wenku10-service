@@ -95,7 +95,7 @@ class App extends Base
 				switch( e.Data.action )
 				{
 					case "comment"       : mgr.Comment( e.Data, Render ); return;
-					case "get-comment"   : mgr.GetComments( e.Data, Render ); return;
+					case "get-comment"   : mgr.GetComments( e.Data, Render, 3 ); return;
 					case "search"        : mgr.Search( e.Data, Render ); return;
 					case "reserve-uuid"  : mgr.ReserveUuid( e.Data, Render ); return;
 					case "status-report" : mgr.PushStatus( e.Data, Render ); return;

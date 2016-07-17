@@ -81,22 +81,16 @@ class ScriptManager
 	Search( postdata, callback )
 	{
 		var criteria = {};
-
 		var fields = { comments: false, access_token: false, data: false };
 
-		this.__stringSearch( postdata, criteria, "name", "desc", "uuid" );
 		this.__privateAccess( postdata, criteria );
-		this.__in( postdata, criteria, "zone", "type", "tags" );
-		this.utils.use( "object", "math" );
 
-		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
-		var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
-
-		Model.Script.find( criteria, fields, ( err, items ) => {
+		var extract = ( err, items ) => {
 			if( this.__dbErr( err, callback ) ) return;
 
 			var output = [];
 
+			this.utils.use( "object" );
 			for( let item of items )
 			{
 				var saneData = this.utils.refObj(
@@ -113,10 +107,32 @@ class ScriptManager
 			}
 
 			callback( this.App.JsonSuccess( output ) );
-		} )
-			.populate( "author" )
-			.sort({ date_created: -1 })
-			.skip( skip ).limit( limit );
+		};
+
+		// UUID search should be fast
+		if( postdata.uuid )
+		{
+			criteria.uuid = postdata.uuid;
+			Model.Script.findOne(
+				criteria, fields
+				, ( e, data ) => extract( e, data ? [ data ] : [] )
+			).populate( "author" );
+		}
+		else
+		{
+			this.utils.use( "math" );
+
+			var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+			var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
+
+			this.__stringSearch( postdata, criteria, "name", "desc" );
+			this.__in( postdata, criteria, "zone", "type", "tags" );
+
+			Model.Script.find( criteria, fields, extract )
+				.populate( "author" )
+				.sort({ date_created: -1 })
+				.skip( skip ).limit( limit );
+		}
 	}
 
 	Publish( postdata, callback )

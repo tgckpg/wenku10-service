@@ -51,10 +51,7 @@ var M_Script = new Schema({
 	 * provided a correct access_token
 	 **/
 	, enable: { type: Boolean, default: true }
-	/**
-	 * This is for recovering lost access_token
-	 **/
-	, secret: String
+	, encrypted: Boolean
 	, access_token: String
 	// Can be null, i.e. anonymous
 	, author: R_User

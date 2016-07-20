@@ -39,13 +39,14 @@ class ScriptManager
 	{
 		var user = postdata.anon ? null : this.App.Auth.user;
 
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "encrypted", "data", "name", "zone", "type" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "zone", "type" );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
 			item.data = new Buffer( postdata.data );
 			item.desc = postdata.desc;
 			item.name = postdata.name;
-			item.encrypted = ( postdata.encrypted == "1" );
+			item.enc = ( postdata.enc == "1" );
+			item.force_enc = ( postdata.force_enc == "1" );
 			item.author = user;
 
 			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
@@ -261,6 +262,7 @@ class ScriptManager
 				if: "$data.enabled", then: "$data.content", else: "$data.remarks"
 			} }
 			, "replies": "$data.replies"
+			, "enc": "$data.enc"
 			, "date_created": "$data.date_created"
 			, "date_modified": "$data.date_modified"
 			, "author._id": "$author._id"
@@ -365,6 +367,7 @@ class ScriptManager
 				var comm = new Model.Comment();
 				comm.content = postdata.content;
 				comm.author = this.App.Auth.user;
+				comm.enc = ( postdata.enc == "1" );
 
 				data[ target ].push( comm );
 

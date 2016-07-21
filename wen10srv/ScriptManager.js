@@ -419,7 +419,9 @@ class ScriptManager
 		if( postdata.access_token )
 		{
 			criteria.$or = [
-				{ access_token: postdata.access_token }
+				Array.isArray( postdata.access_token )
+					? { access_token: { $in: postdata.access_token } }
+					: { access_token: postdata.access_token }
 				, { public: true, draft: false, enable: true }
 			];
 		}

@@ -37,7 +37,7 @@ class ScriptManager
 
 	Upload( postdata, callback )
 	{
-		var user = postdata.anon ? null : this.App.Auth.user;
+		var user = postdata.anon == "1" ? null : this.App.Auth.user;
 
 		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
 

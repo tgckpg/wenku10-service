@@ -29,7 +29,7 @@ var M_Script = new Schema({
 	uuid: { type: String, unique: true }
 	, name: String
 	, data: Buffer
-	, desc: String
+	, desc: { type: String, default: "" }
 	, hits: { type: Number, default: 0 }
 	, zone: [ String ]
 	, type: [ String ]

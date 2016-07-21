@@ -39,7 +39,7 @@ class ScriptManager
 	{
 		var user = postdata.anon ? null : this.App.Auth.user;
 
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "zone", "type" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
 			item.data = new Buffer( postdata.data );

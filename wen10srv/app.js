@@ -63,6 +63,10 @@ class App extends Base
 				// Auth Scope
 				switch( e.Data.action )
 				{
+					case "session-valid":
+						Render( new JsonProto( null, this.Auth.LoggedIn, "OK" ) );
+						return;
+
 					case "login":
 						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
 						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
@@ -73,8 +77,9 @@ class App extends Base
 						return;
 
 					case "register":
-						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
+						Validation.NOT_EMPTY( e.Data, "user", "passwd", "email" );
 						Validation.PASSWD( e.Data.passwd );
+						Validation.EMAIL( e.Data.email );
 						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
 						return;
 
@@ -90,7 +95,7 @@ class App extends Base
 				switch( e.Data.action )
 				{
 					case "comment"       : mgr.Comment( e.Data, Render ); return;
-					case "get-comment"   : mgr.GetComments( e.Data, Render ); return;
+					case "get-comment"   : mgr.GetComments( e.Data, Render, 3 ); return;
 					case "search"        : mgr.Search( e.Data, Render ); return;
 					case "reserve-uuid"  : mgr.ReserveUuid( e.Data, Render ); return;
 					case "status-report" : mgr.PushStatus( e.Data, Render ); return;

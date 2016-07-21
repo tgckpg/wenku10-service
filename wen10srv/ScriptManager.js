@@ -39,13 +39,14 @@ class ScriptManager
 	{
 		var user = postdata.anon ? null : this.App.Auth.user;
 
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "secret", "data", "name", "zone", "type" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
 			item.data = new Buffer( postdata.data );
 			item.desc = postdata.desc;
 			item.name = postdata.name;
-			item.secret = postdata.secret;
+			item.enc = ( postdata.enc == "1" );
+			item.force_enc = ( postdata.force_enc == "1" );
 			item.author = user;
 
 			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
@@ -199,7 +200,7 @@ class ScriptManager
 		);
 	}
 
-	GetComments( postdata, callback )
+	GetComments( postdata, callback, level )
 	{
 		Validation.NOT_EMPTY( postdata, "id", "target" );
 
@@ -216,7 +217,17 @@ class ScriptManager
 
 			case "comment":
 				model = "Comment";
-				pipelines.push({ $match: { _id: ObjectId( postdata.id ) } });
+
+				var targets = Array.isArray( postdata.id )
+					? postdata.id : [ postdata.id ];
+
+				var selected = [];
+				for( let i of targets )
+				{
+					selected.push( ObjectId( i ) );
+				}
+
+				pipelines.push({ $match: { _id: { $in: selected } } });
 				pipelines.push({ $project: { _id: "$replies" } });
 				break;
 
@@ -251,6 +262,7 @@ class ScriptManager
 				if: "$data.enabled", then: "$data.content", else: "$data.remarks"
 			} }
 			, "replies": "$data.replies"
+			, "enc": "$data.enc"
 			, "date_created": "$data.date_created"
 			, "date_modified": "$data.date_modified"
 			, "author._id": "$author._id"
@@ -259,7 +271,53 @@ class ScriptManager
 
 		Model[ model ].aggregate( pipelines ).exec( ( e, data ) => {
 			if( this.__dbErr( e, callback ) ) return;
-			callback( this.App.JsonSuccess( data ) );
+
+			var NResolv = 0;
+			var PendingResolv = {};
+
+			if( 0 < level )
+			for( let d of data )
+			{
+				if( 0 < d.replies.length )
+				{
+					PendingResolv[ d._id ] = d;
+					NResolv ++;
+				}
+			}
+
+			// Resolve comments recursively
+			if( 0 < NResolv )
+			{
+				var ResolveReplies = ( e ) => {
+					for( let d of e.data )
+					{
+						for( let i in PendingResolv )
+						{
+							var item = PendingResolv[i];
+							var idx = item.replies.findIndex( x => d._id.equals( x ) );
+
+							if( ~idx )
+							{
+								item.replies[ idx ] = d;
+								break;
+							}
+						}
+					}
+
+					callback( this.App.JsonSuccess( data ) );
+				};
+
+				this.GetComments(
+					{ target: "comment", id: Object.keys( PendingResolv ) }
+					// e: JsonStatus
+					, ResolveReplies 
+					, level - 1
+				);
+			}
+			else
+			{
+				callback( this.App.JsonSuccess( data ) );
+			}
 		} );
 	}
 
@@ -309,6 +367,7 @@ class ScriptManager
 				var comm = new Model.Comment();
 				comm.content = postdata.content;
 				comm.author = this.App.Auth.user;
+				comm.enc = ( postdata.enc == "1" );
 
 				data[ target ].push( comm );
 
@@ -360,7 +419,9 @@ class ScriptManager
 		if( postdata.access_token )
 		{
 			criteria.$or = [
-				{ access_token: postdata.access_token }
+				Array.isArray( postdata.access_token )
+					? { access_token: { $in: postdata.access_token } }
+					: { access_token: postdata.access_token }
 				, { public: true, draft: false, enable: true }
 			];
 		}

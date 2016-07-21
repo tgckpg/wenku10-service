@@ -170,6 +170,48 @@ goal "Posting comment"
 		goalend
 	}
 
+	goal "Comment stacks"
+	{
+		goal "Getting 1 comment"
+		{
+			declare -A POSTDATA=(
+				["action"]="get-comment"
+				["limit"]="1"
+				["lang"]="$RLANG"
+			)
+
+			assert_wrong_empty "script" $UUID
+
+			goalend
+		}
+
+		for i in {1..10}; do
+			CID=$( grep '"data":\[{"_id":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data:\\[{_id://g" )
+
+			goal "Posting reply for $CID"
+			{
+					declare -A POSTDATA=(
+						["action"]="comment"
+						["content"]="Ok_this_is_the_reply on Lv$i"
+						["lang"]="$RLANG"
+					)
+
+					assert_wrong_empty_auth "comment" $CID
+
+					declare -A POSTDATA=(
+						["action"]="get-comment"
+						["limit"]="1"
+						["lang"]="$RLANG"
+					)
+
+					assert_wrong_empty "comment" $CID
+				goalend
+			}
+		done
+
+		goalend
+	}
+
 	. ./tests/003_logout
 
 	goalend

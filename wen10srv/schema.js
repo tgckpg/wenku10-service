@@ -29,7 +29,7 @@ var M_Script = new Schema({
 	uuid: { type: String, unique: true }
 	, name: String
 	, data: Buffer
-	, desc: String
+	, desc: { type: String, default: "" }
 	, hits: { type: Number, default: 0 }
 	, zone: [ String ]
 	, type: [ String ]
@@ -51,10 +51,8 @@ var M_Script = new Schema({
 	 * provided a correct access_token
 	 **/
 	, enable: { type: Boolean, default: true }
-	/**
-	 * This is for recovering lost access_token
-	 **/
-	, secret: String
+	, enc: Boolean
+	, force_enc: Boolean
 	, access_token: String
 	// Can be null, i.e. anonymous
 	, author: R_User
@@ -64,6 +62,7 @@ var M_User = new Schema({
 	name: { type: String , unique: true }
 
 	, password: String
+	, email: String
 	, active: { type: Boolean, default: true }
 	, profile: {
 		display_name: String, email: String
@@ -73,6 +72,7 @@ var M_User = new Schema({
 var M_Comment = new Schema({
 	author: R_User
 	, content: String
+	, enc: Boolean
 	, date_modified: { type: Date, default: Date.now }
 	, date_created: { type: Date, default: Date.now }
 	, enabled: { type: Boolean, default: true }

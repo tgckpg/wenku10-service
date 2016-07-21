@@ -13,3 +13,14 @@ goal "Account Logout"
 
 	goalend
 }
+
+goal "Session check"
+{
+	declare -A POSTDATA=(
+		["action"]="session-valid"
+		["lang"]="$RLANG"
+	)
+
+	. ./tests/assert_jfail
+	goalend
+}

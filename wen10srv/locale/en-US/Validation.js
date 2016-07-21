@@ -4,4 +4,5 @@ module.exports = {
 	, "PASS_TOO_SHORT": "Password is too short ( < %s )"
 	, "PASS_IS_A_JOKE": "Your password is a joke"
 	, "ERROR": "Validation error"
+	, "INVALID_EMAIL": "Please enter a valid email address"
 };

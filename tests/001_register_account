@@ -1,82 +1,84 @@
 #!/bin/bash
 
+function __DefParam() {
+	POSTDATA["user"]="$1"
+	POSTDATA["passwd"]="$2"
+	POSTDATA["email"]="$3"
+}
+
 goal "Account Registration"
 {
+	declare -A POSTDATA=(
+		["action"]="register"
+		["lang"]="$RLANG"
+	)
+
 	goal "Empty password"
 	{
-		declare -A POSTDATA=(
-			["action"]="register"
-			["user"]="$ACCOUNT"
-			["passwd"]=""
-			["lang"]="$RLANG"
-		)
-
+		__DefParam "$ACCOUNT" "" "$EMAIL"
 		. ./tests/assert_jfail
 		goalend
 	}
 
 	goal "Empty username"
 	{
-		declare -A POSTDATA=(
-			["action"]="register"
-			["user"]="$ACCOUNT"
-			["passwd"]=""
-			["lang"]="$RLANG"
-		)
-
+		__DefParam "" "$PASSWD" "$EMAIL"
 		. ./tests/assert_jfail
 		goalend
 	}
 
+	goal "Empty email"
+	{
+		__DefParam "$ACCOUNT" "$PASSWD" ""
+		. ./tests/assert_jfail
+		goalend
+	}
 
 	goal "Password: aaa"
 	{
-		declare -A POSTDATA=(
-			["action"]="register"
-			["user"]="$ACCOUNT"
-			["passwd"]="aaa"
-			["lang"]="$RLANG"
-		)
-
+		__DefParam "$ACCOUNT" "aaa" "$EMAIL"
 		. ./tests/assert_jfail
 		goalend
 	}
 
 	goal "Password: 12345678"
 	{
-		declare -A POSTDATA=(
-			["action"]="register"
-			["user"]="$ACCOUNT"
-			["passwd"]="12345678"
-			["lang"]="$RLANG"
-		)
-
+		__DefParam "$ACCOUNT" "12345678" "$EMAIL"
 		. ./tests/assert_jfail
 		goalend
 	}
 
 	goal "Password: 123456789aa"
 	{
-		declare -A POSTDATA=(
-			["action"]="register"
-			["user"]="$ACCOUNT"
-			["passwd"]="123456789aa"
-			["lang"]="$RLANG"
-		)
-
+		__DefParam "$ACCOUNT" "123456789aa" "$EMAIL"
 		. ./tests/assert_jfail
 		goalend
 	}
 
-	goal "Valid password"
+	goal "Email: invalid_email"
 	{
-		declare -A POSTDATA=(
-			["action"]="register"
-			["user"]="$ACCOUNT"
-			["passwd"]="$PASSWD"
-			["lang"]="$RLANG"
-		)
+		__DefParam "$ACCOUNT" "$PASSWD" "invalid_email"
+		. ./tests/assert_jfail
+		goalend
+	}
 
+	goal "Email: invalid@email"
+	{
+		__DefParam "$ACCOUNT" "$PASSWD" "invalid@email"
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Email: invalid@com.@mail.email"
+	{
+		__DefParam "$ACCOUNT" "$PASSWD" "invalid@com.@mail.email"
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Providing valid data"
+	{
+		__DefParam "$ACCOUNT" "$PASSWD" "$EMAIL"
 		. ./tests/assert_jsuccess
 		goalend
 	}

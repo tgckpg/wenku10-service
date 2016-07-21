@@ -2,6 +2,7 @@
 
 ACCOUNT="penguin"
 PASSWD="1234456789"
+EMAIL="example@example.com"
 RLANG="en-US"
 ACCESS_TOKEN="This is the access token"
 COOKIE="cookie.tmp"

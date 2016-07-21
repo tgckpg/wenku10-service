@@ -36,7 +36,7 @@ goal "Upload script"
 		)
 		. ./tests/assert_jsuccess
 
-		grep -q "\"author\":\"$ACCOUNT\"" $TempFile
+		grep -q "\"display_name\":\"$ACCOUNT\"" $TempFile
 		failthru $? "Expected author is not \"$ACCOUNT\""
 
 		goalend

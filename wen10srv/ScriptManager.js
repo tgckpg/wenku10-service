@@ -37,9 +37,8 @@ class ScriptManager
 
 	Upload( postdata, callback )
 	{
-		var user = postdata.anon == "1" ? null : this.App.Auth.user;
-
 		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
+		Dragonfly.Debug( "Upload: " + postdata.uuid );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
 			item.data = new Buffer( postdata.data );
@@ -47,7 +46,7 @@ class ScriptManager
 			item.name = postdata.name;
 			item.enc = ( postdata.enc == "1" );
 			item.force_enc = ( postdata.force_enc == "1" );
-			item.author = user;
+			item.author = postdata.anon == "1" ? null : this.App.Auth.user;
 
 			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
 
@@ -102,7 +101,9 @@ class ScriptManager
 					, "public"
 				);
 
-				saneData.author = item.author ? item.author.profile.display_name : null;
+				saneData.author = item.author
+					? { _id: item.author._id, author: item.author.profile.display_name }
+					: null;
 
 				output.push( saneData );
 			}

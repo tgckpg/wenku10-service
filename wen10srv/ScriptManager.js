@@ -102,7 +102,7 @@ class ScriptManager
 				);
 
 				saneData.author = item.author
-					? { _id: item.author._id, author: item.author.profile.display_name }
+					? { _id: item.author._id, display_name: item.author.profile.display_name }
 					: null;
 
 				output.push( saneData );

@@ -98,7 +98,7 @@ class ScriptManager
 					, "uuid", "name", "desc", "hits", "zone"
 					, "type" , "date_modified", "date_created"
 					, "history", "tags", "related", "draft"
-					, "public"
+					, "public", "enc", "force_enc"
 				);
 
 				saneData.author = item.author

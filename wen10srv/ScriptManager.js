@@ -111,10 +111,20 @@ class ScriptManager
 			callback( this.App.JsonSuccess( output ) );
 		};
 
+		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+
 		// UUID search should be fast
 		if( postdata.uuid )
 		{
+			// uuid search with skip always yield 0
+			if( 0 < skip )
+			{
+				this.App.JsonSuccess([]);
+				return;
+			}
+
 			criteria.uuid = postdata.uuid;
+
 			Model.Script.findOne(
 				criteria, fields
 				, ( e, data ) => extract( e, data ? [ data ] : [] )
@@ -124,7 +134,6 @@ class ScriptManager
 		{
 			this.utils.use( "math" );
 
-			var skip = Math.abs( parseInt( postdata.skip ) || 0 );
 			var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
 
 			this.__stringSearch( postdata, criteria, "name", "desc" );

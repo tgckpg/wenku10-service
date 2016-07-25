@@ -133,9 +133,87 @@ function GrantRequest() {
 	}
 }
 
+function ClearGrants() {
+	SEND_COOKIE=true
+	goal "Clearing grants for $GID"
+	{
+		declare -A POSTDATA=(
+			["action"]="clear-grant-records"
+			["id"]="$GID"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goalend
+	}
+
+	goal "Checking if it is really cleared"
+	{
+		declare -A POSTDATA=(
+			["action"]="my-requests"
+			["lang"]="$RLANG"
+		)
+
+		SEND_COOKIE=true
+		. ./tests/assert_jsuccess
+
+		grep -q -o "\"uuid\":\"$UUID\".\\+\"grants\":\\[\\]" $TempFile
+		exitOk $? "Grant is still present"
+	}
+}
+
+function WithdrawRequest() {
+	SEND_COOKIE=true
+	goal "Withdraw request for $GID"
+	{
+		declare -A POSTDATA=(
+			["action"]="withdraw-request"
+			["id"]="$GID"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goalend
+	}
+
+	goal "Checking if it is really withdrawed"
+	{
+		declare -A POSTDATA=(
+			["action"]="my-requests"
+			["lang"]="$RLANG"
+		)
+
+		SEND_COOKIE=true
+		. ./tests/assert_jsuccess
+
+		grep -v -q "$GID" $TempFile
+		exitOk $? "Request is still present"
+	}
+
+	goal "Withdraw again"
+	{
+		declare -A POSTDATA=(
+			["action"]="withdraw-request"
+			["id"]="$GID"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+
+		goalend
+	}
+
+}
+
 . ./tests/002_login
 TestRequest "key"
 GrantRequest "key"
+ClearGrants
+WithdrawRequest
 TestRequest "token"
 GrantRequest "token"
+ClearGrants
+WithdrawRequest
 . ./tests/003_logout

@@ -591,12 +591,57 @@ class ScriptManager
 	{
 		if( !this.App.Auth.LoggedIn )
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+
+		Validation.NOT_EMPTY( postdata, "id" );
+
+		Model.Request.update(
+			{ _id: ObjectId( postdata.id ), author: this.App.Auth.user }
+			, { $set: { grants: [] } }
+			, ( e, data ) => {
+				if( this.__dbErr( e, callback ) ) return;
+
+				switch( data.nModified )
+				{
+					case 0:
+						callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+						break;
+					case 1:
+						callback( this.App.JsonSuccess() );
+						break;
+					default:
+						Dragonfly.Warning( "Unusual number of cleared records for CGR: " + data.nModified );
+						callback( this.App.JsonSuccess() );
+				}
+			}
+		);
 	}
 
 	WithdrawRequest( postdata, callback )
 	{
 		if( !this.App.Auth.LoggedIn )
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+
+		Validation.NOT_EMPTY( postdata, "id" );
+
+		Model.Request.remove(
+			{ _id: ObjectId( postdata.id ), author: this.App.Auth.user }
+			, ( e, data ) => {
+				if( this.__dbErr( e, callback ) ) return;
+
+				switch( data.result.n )
+				{
+					case 0:
+						callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+						break;
+					case 1:
+						callback( this.App.JsonSuccess() );
+						break;
+					default:
+						Dragonfly.Warning( "Unusual number of removed records for WR: " + data.nModified );
+						callback( this.App.JsonSuccess() );
+				}
+			}
+		);
 	}
 	/* End Key Requests }}}*/
 

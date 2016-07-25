@@ -7,6 +7,7 @@ RLANG="en-US"
 ACCESS_TOKEN="This is the access token"
 COOKIE="cookie.tmp"
 SEND_COOKIE=false
+PUBKEY="HUTNEHNOHUNHENHUTNHENU"
 
 if [ -f uuid.tmp ]; then
 	UUID=$( cat uuid.tmp )

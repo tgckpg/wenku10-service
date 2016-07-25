@@ -22,7 +22,8 @@ mongoose.connect( options.host, options.auth );
 /* Schema Heads */
 var R_User = { type: Schema.Types.ObjectId, ref: "User" };
 var R_Comment = { type: Schema.Types.ObjectId, ref: "Comment" };
-var R_Script = { type: Schema.Types.ObjectId, ref: "Scripts" };
+var R_Script = { type: Schema.Types.ObjectId, ref: "Script" };
+var R_Request = { type: Schema.Types.ObjectId, ref: "Request" };
 /* End Schema Heads */
 
 var M_Script = new Schema({
@@ -41,6 +42,8 @@ var M_Script = new Schema({
 		, date: { type: Date, default: Date.now }
 	}]
 	, comments: [ R_Comment ]
+	, key_requests: [ R_Request ]
+	, token_requests: [ R_Request ]
 	, tags: [ String ]
 	, related: [ R_Script ]
 	, draft: { type: Boolean, default: true }
@@ -60,13 +63,23 @@ var M_Script = new Schema({
 
 var M_User = new Schema({
 	name: { type: String , unique: true }
-
 	, password: String
 	, email: String
 	, active: { type: Boolean, default: true }
 	, profile: {
 		display_name: String, email: String
 	}
+});
+
+var M_Request = new Schema({
+	author: R_User
+	// Used by granters to encrypt the granted key
+	, pubkey: String
+	, grants: [ String ]
+	, remarks: String
+	, target: String
+	, script: R_Script
+	, date_created: { type: Date, default: Date.now }
 });
 
 var M_Comment = new Schema({
@@ -89,6 +102,7 @@ class DB extends EventEmitter
 			  { name: "User"    , schema: M_User      , hasKey: true }
 			, { name: "Script"  , schema: M_Script    , hasKey: true }
 			, { name: "Comment" , schema: M_Comment }
+			, { name: "Request" , schema: M_Request }
 		];
 
 		var l = Models.length;

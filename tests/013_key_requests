@@ -1,0 +1,219 @@
+#!/bin/bash
+function assert_params() {
+	goal "Param Tests"
+	{
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]="NaN"
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]=""
+		. ./tests/assert_jfail
+		goalend
+	}
+}
+
+function assert_wrong_empty() {
+	assert_params
+
+	POSTDATA["target"]="$1"
+	POSTDATA["id"]="$2"
+	. ./tests/assert_jsuccess
+}
+
+function assert_wrong_empty_auth() {
+	SEND_COOKIE=true
+	assert_params
+
+	SEND_COOKIE=false
+	POSTDATA["target"]="$1"
+	POSTDATA["id"]="$2"
+	. ./tests/assert_jfail
+
+	SEND_COOKIE=true
+	. ./tests/assert_jsuccess
+	SEND_COOKIE=false
+}
+
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/for_test_013
+	. ./tests/assert_token_access
+	. ./tests/006_script_download
+	goalend
+}
+
+function TestRequest() {
+	TYPE=$1
+	goal "Placing $TYPE Requests"
+	{
+		declare -A POSTDATA=(
+			["action"]="place-request"
+			["remarks"]="This is a remark for $TYPE"
+			["pubkey"]="$PUBKEY"
+			["lang"]="$RLANG"
+		)
+
+		assert_wrong_empty_auth "$TYPE" $UUID
+
+		goal "Reposting Request"
+		{
+			SEND_COOKIE=true
+			declare -A POSTDATA=(
+				["action"]="place-request"
+				["remarks"]="This is a remark"
+				["pubkey"]="$PUBKEY"
+				["lang"]="$RLANG"
+				["target"]="$TYPE"
+				["id"]=$UUID
+			)
+
+			. ./tests/assert_jfail
+			goalend
+		}
+
+		goal "Validate pushed Results"
+		{
+			goal "Searching $TYPE requests"
+			{
+				declare -A POSTDATA=(
+					["action"]="get-requests"
+					["id"]=$UUID
+					["target"]="$TYPE"
+					["lang"]="$RLANG"
+				)
+				. ./tests/assert_jsuccess
+
+				if [ $( grep -o "\"remarks\"" $TempFile | wc -w ) -ne 1 ]; then
+					exitOk 1 "Number of expected requests count is wrong"
+				fi
+
+				goalend
+			}
+
+			goalend
+		}
+
+		GID=$( grep '"data":\[{"_id":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data:\\[{_id://g" )
+
+		goalend
+	}
+}
+
+function GrantRequest() {
+	TYPE=$1
+	MESG="This is the granted $TYPE"
+	goal "Granting $TYPE Requests for $GID"
+	{
+		declare -A POSTDATA=(
+			["action"]="grant-request"
+			["grant"]="$MESG"
+			["lang"]="$RLANG"
+		)
+
+		assert_wrong_empty "$TYPE" $GID
+
+		goalend
+	}
+
+	goal "Checking the Granted Data"
+	{
+		declare -A POSTDATA=(
+			["action"]="my-requests"
+			["lang"]="$RLANG"
+		)
+
+		SEND_COOKIE=true
+		. ./tests/assert_jsuccess
+
+		grep -q -o "\"uuid\":\"$UUID\".\\+\"grants\":\\[\"$MESG\"\\]" $TempFile
+		exitOk $? "Unable to grant $TYPE"
+	}
+}
+
+function ClearGrants() {
+	SEND_COOKIE=true
+	goal "Clearing grants for $GID"
+	{
+		declare -A POSTDATA=(
+			["action"]="clear-grant-records"
+			["id"]="$GID"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goalend
+	}
+
+	goal "Checking if it is really cleared"
+	{
+		declare -A POSTDATA=(
+			["action"]="my-requests"
+			["lang"]="$RLANG"
+		)
+
+		SEND_COOKIE=true
+		. ./tests/assert_jsuccess
+
+		grep -q -o "\"uuid\":\"$UUID\".\\+\"grants\":\\[\\]" $TempFile
+		exitOk $? "Grant is still present"
+	}
+}
+
+function WithdrawRequest() {
+	SEND_COOKIE=true
+	goal "Withdraw request for $GID"
+	{
+		declare -A POSTDATA=(
+			["action"]="withdraw-request"
+			["id"]="$GID"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goalend
+	}
+
+	goal "Checking if it is really withdrawed"
+	{
+		declare -A POSTDATA=(
+			["action"]="my-requests"
+			["lang"]="$RLANG"
+		)
+
+		SEND_COOKIE=true
+		. ./tests/assert_jsuccess
+
+		grep -v -q "$GID" $TempFile
+		exitOk $? "Request is still present"
+	}
+
+	goal "Withdraw again"
+	{
+		declare -A POSTDATA=(
+			["action"]="withdraw-request"
+			["id"]="$GID"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jfail
+
+		goalend
+	}
+
+}
+
+. ./tests/002_login
+TestRequest "key"
+GrantRequest "key"
+ClearGrants
+WithdrawRequest
+TestRequest "token"
+GrantRequest "token"
+ClearGrants
+WithdrawRequest
+. ./tests/003_logout

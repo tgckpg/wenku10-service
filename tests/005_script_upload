@@ -13,5 +13,36 @@ goal "Upload script"
 		}
 	done
 
+	. ./tests/002_login
+
+
+	SEND_COOKIE=true
+
+	goal "LoggedIn Script upload"
+	{
+		. ./tests/004_reserve_uuid
+		. ./tests/postscripts/001
+		. ./tests/assert_token_access
+		goalend
+	}
+
+	goal "Search script"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["uuid"]="$UUID"
+			["access_token"]="$ACCESS_TOKEN"
+			["lang"]="$RLANG"
+		)
+		. ./tests/assert_jsuccess
+
+		grep -q "\"display_name\":\"$ACCOUNT\"" $TempFile
+		failthru $? "Expected author is not \"$ACCOUNT\""
+
+		goalend
+	}
+
+	. ./tests/003_logout
+
 	goalend
 }

@@ -1,3 +1,4 @@
+"use strict";
 require( "../../BotanSS/package" );
 require( "../../config/global" );
 
@@ -20,20 +21,21 @@ db.on( "error", ThrowEverything );
 
 mongoose.connect( options.host, options.auth );
 
-mongoose.model( "users", {} ).remove({}, function( err )
-{
-	ThrowEverything( err );
+var i = 0;
+var rmCollection = [ "users", "scripts", "comments", "requests" ];
+var l = rmCollection.length;
 
-	console.log( "Dropped Collection Users" );
-	mongoose.model( "scripts", {} ).remove({}, function( err )
-	{
+var TestThenExit = function() {
+	if( ++ i == l ) process.exit( 0 );
+};
+
+var RemoveCollection = function( c )
+{
+	mongoose.model( c, {} ).remove({}, ( err ) => {
 		ThrowEverything( err );
-		console.log( "Dropped Collection Scirpts" );
-		mongoose.model( "comments", {} ).remove({}, function( err )
-		{
-			ThrowEverything( err );
-			console.log( "Dropped Collection Comments" );
-			process.exit(0);
-		});
-	});
-});
+		console.log( "Dropped Collection: " + c );
+		TestThenExit();
+	} );
+};
+
+for( let col of rmCollection ) RemoveCollection( col );

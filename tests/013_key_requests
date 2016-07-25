@@ -1,0 +1,107 @@
+#!/bin/bash
+function assert_params() {
+	goal "Param Tests"
+	{
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]="NaN"
+		. ./tests/assert_jfail
+
+		POSTDATA["target"]=""
+		. ./tests/assert_jfail
+		goalend
+	}
+}
+
+function assert_wrong_empty() {
+	assert_params
+
+	POSTDATA["target"]="$1"
+	POSTDATA["id"]="$2"
+	. ./tests/assert_jsuccess
+}
+
+function assert_wrong_empty_auth() {
+	SEND_COOKIE=true
+	assert_params
+
+	SEND_COOKIE=false
+	POSTDATA["target"]="$1"
+	POSTDATA["id"]="$2"
+	. ./tests/assert_jfail
+
+	SEND_COOKIE=true
+	. ./tests/assert_jsuccess
+	SEND_COOKIE=false
+}
+
+
+goal "Upload Script" 
+{
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/for_test_013
+	. ./tests/assert_token_access
+	. ./tests/006_script_download
+	goalend
+}
+
+function TestRequest() {
+	TYPE=$1
+	goal "Placing $TYPE Requests"
+	{
+		declare -A POSTDATA=(
+			["action"]="place-request"
+			["remarks"]="This is a remark for $TYPE"
+			["pubkey"]="$PUBKEY"
+			["lang"]="$RLANG"
+		)
+
+		assert_wrong_empty_auth "$TYPE" $UUID
+
+		goal "Reposting Request"
+		{
+			SEND_COOKIE=true
+			declare -A POSTDATA=(
+				["action"]="place-request"
+				["remarks"]="This is a remark"
+				["pubkey"]="$PUBKEY"
+				["lang"]="$RLANG"
+				["target"]="$TYPE"
+				["id"]=$UUID
+			)
+
+			. ./tests/assert_jfail
+			goalend
+		}
+
+		goal "Validate pushed Results"
+		{
+			goal "Searching $TYPE requests"
+			{
+				declare -A POSTDATA=(
+					["action"]="get-requests"
+					["id"]=$UUID
+					["target"]="$TYPE"
+					["lang"]="$RLANG"
+				)
+				. ./tests/assert_jsuccess
+
+				if [ $( grep -o "\"remarks\"" $TempFile | wc -w ) -ne 1 ]; then
+					exitOk 1 "Number of expected requests count is wrong"
+				fi
+
+				goalend
+			}
+
+			goalend
+		}
+
+		goalend
+	}
+}
+
+. ./tests/002_login
+TestRequest "key"
+TestRequest "token"
+. ./tests/003_logout
+

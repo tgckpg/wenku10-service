@@ -18,6 +18,72 @@ class ScriptManager
 		this.utils = this.App.Control.utils;
 	}
 
+	/*{{{ Private Actions: Upload / Publish / Remove */
+	Upload( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
+		Dragonfly.Debug( "Upload: " + postdata.uuid );
+
+		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
+			item.data = new Buffer( postdata.data );
+			item.desc = postdata.desc;
+			item.name = postdata.name;
+			item.enc = ( postdata.enc == "1" );
+			item.force_enc = ( postdata.force_enc == "1" );
+			item.author = postdata.anon == "1" ? null : this.App.Auth.user;
+
+			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
+
+		}, callback );
+	}
+
+	Publish( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "public" );
+
+		this.__edit( postdata.uuid, postdata.access_token, ( data ) => {
+
+			data.public = postdata.public;
+			data.draft = false;
+
+			data.save( ( e ) => {
+				if( this.__dbErr( e, callback ) ) return;
+				callback( this.App.JsonSuccess() );
+			} );
+
+		}, callback, { public: 1, draft: 1, access_token: 1 } );
+	}
+
+	Remove( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token" );
+
+		Model.Script.findOne(
+			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
+				if( this.__dbErr( e, callback ) ) return;
+
+				if( !data )
+				{
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_SCRIPT, uuid ) );
+					return;
+				}
+
+				if( data.access_token != postdata.access_token )
+				{
+					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
+					return;
+				}
+
+				data.remove( ( e ) => {
+					if( this.__dbErr( e, callback ) ) return;
+					callback( this.App.JsonSuccess() );
+				} );
+			}
+		);
+	}
+	/* End Private Actions }}}*/
+
+	/*{{{ Public Actions: Reserve / Download / Status Reports */
 	ReserveUuid( data, callback )
 	{
 		Validation.NOT_EMPTY( data, "access_token" );
@@ -35,22 +101,23 @@ class ScriptManager
 		} );
 	}
 
-	Upload( postdata, callback )
+	Download( postdata, callback )
 	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
-		Dragonfly.Debug( "Upload: " + postdata.uuid );
+		Validation.NOT_EMPTY( postdata, "uuid" );
 
-		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
-			item.data = new Buffer( postdata.data );
-			item.desc = postdata.desc;
-			item.name = postdata.name;
-			item.enc = ( postdata.enc == "1" );
-			item.force_enc = ( postdata.force_enc == "1" );
-			item.author = postdata.anon == "1" ? null : this.App.Auth.user;
+		var criteria = { uuid: postdata.uuid };
+		this.__privateAccess( postdata, criteria );
 
-			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
+		this.__get(
+			criteria, { data: true, hits: true }
+			, ( e ) => {
+				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
 
-		}, callback );
+				e.hits ++;
+				e.save();
+			}
+			, callback
+		);
 	}
 
 	PushStatus( postdata, callback )
@@ -77,11 +144,18 @@ class ScriptManager
 
 		}, callback, { history: 1 } );
 	}
+	/* End Public Actions }}}*/
 
+	/*{{{ Search */
 	Search( postdata, callback )
 	{
 		var criteria = {};
-		var fields = { comments: false, access_token: false, data: false };
+		var fields = {
+			comments: false
+			, key_requests: false
+			, token_requests: false
+			, access_token: false
+			, data: false };
 
 		this.__privateAccess( postdata, criteria );
 
@@ -145,66 +219,71 @@ class ScriptManager
 				.skip( skip ).limit( limit );
 		}
 	}
+	/* End Search }}}*/
 
-	Publish( postdata, callback )
+	/*{{{ Comments */
+	Comment( postdata, callback )
 	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "public" );
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
-		this.__edit( postdata.uuid, postdata.access_token, ( data ) => {
+		Validation.NOT_EMPTY( postdata, "id", "target", "content" );
 
-			data.public = postdata.public;
-			data.draft = false;
+		var crit_id = {};
+		var model;
+		var target;
 
-			data.save( ( e ) => {
-				if( this.__dbErr( e, callback ) ) return;
-				callback( this.App.JsonSuccess() );
-			} );
+		switch( postdata.target )
+		{
+			case "script":
+				model = "Script";
+				target = "comments";
+				crit_id.uuid = postdata.id;
+				break;
 
-		}, callback, { public: 1, draft: 1, access_token: 1 } );
-	}
+			case "comment":
+				model = "Comment";
+				target = "replies";
 
-	Download( postdata, callback )
-	{
-		Validation.NOT_EMPTY( postdata, "uuid" );
+				if( !ObjectId.isValid( postdata.id ) )
+					throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
 
-		var criteria = { uuid: postdata.uuid };
-		this.__privateAccess( postdata, criteria );
+				crit_id._id = ObjectId( postdata.id );
+				break;
 
-		this.__get(
-			criteria, { data: true, hits: true }
-			, ( e ) => {
-				callback( this.App.JsonSuccess( e.data.toString( "utf8" ) ) );
+			default:
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+				return;
+		}
 
-				e.hits ++;
-				e.save();
-			}
-			, callback
-		);
-	}
-
-	Remove( postdata, callback )
-	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token" );
-
-		Model.Script.findOne(
-			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
+		Model[ model ].findOne(
+				crit_id, { comments: true, replies: true }, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_SCRIPT, uuid ) );
+					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
 					return;
 				}
 
-				if( data.access_token != postdata.access_token )
-				{
-					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
-					return;
-				}
+				var comm = new Model.Comment();
+				comm.content = postdata.content;
+				comm.author = this.App.Auth.user;
+				comm.enc = ( postdata.enc == "1" );
 
-				data.remove( ( e ) => {
+				data[ target ].push( comm );
+
+				// Save the comment first
+				// This ensure the associating script exists
+				comm.save( ( e ) => {
 					if( this.__dbErr( e, callback ) ) return;
-					callback( this.App.JsonSuccess() );
+
+					// Then save the script
+					data.save( ( e2 ) => {
+						if( this.__dbErr( e2, callback ) ) return;
+						callback( this.App.JsonSuccess() );
+					} );
+
 				} );
 			}
 		);
@@ -330,42 +409,38 @@ class ScriptManager
 			}
 		} );
 	}
+	/* End Comments }}}*/
 
-	Comment( postdata, callback )
+	/*{{{ Key / Token Requests */
+	PlaceRequest( postdata, callback )
 	{
 		if( !this.App.Auth.LoggedIn )
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
-		Validation.NOT_EMPTY( postdata, "id", "target", "content" );
+		Validation.NOT_EMPTY( postdata, "id", "target", "pubkey", "remarks" );
 
-		var crit_id = {};
-		var model;
 		var target;
 
 		switch( postdata.target )
 		{
-			case "script":
-				model = "Script";
-				target = "comments";
-				crit_id.uuid = postdata.id;
+			case "key":
+				target = "key_requests";
 				break;
 
-			case "comment":
-				model = "Comment";
-				target = "replies";
-
-				if( !ObjectId.isValid( postdata.id ) )
-					throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
-
-				crit_id._id = ObjectId( postdata.id );
+			case "token":
+				target = "token_requests";
 				break;
 
 			default:
 				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+				return;
 		}
 
-		Model[ model ].findOne(
-				crit_id, { comments: true, replies: true }, ( e, data ) => {
+		var fields = {};
+		fields[ target ] = true;
+
+		Model.Script.findOne(
+				{ uuid: postdata.id }, fields, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -374,29 +449,99 @@ class ScriptManager
 					return;
 				}
 
-				var comm = new Model.Comment();
-				comm.content = postdata.content;
-				comm.author = this.App.Auth.user;
-				comm.enc = ( postdata.enc == "1" );
+				var KRequest = new Model.Request();
+				KRequest.author = this.App.Auth.user;
+				KRequest.pubkey = postdata.pubkey;
+				KRequest.remarks = postdata.remarks;
 
-				data[ target ].push( comm );
+				// Only one request per user per script
+				for( let exReq of data[ target ] )
+				{
+					if( exReq.author.equals( this.App.Auth.user.id ) )
+					{
+						callback( this.App.JsonError( Locale.ScriptManager.REQUEST_EXISTS, target ) );
+						return;
+					}
+				}
 
-				// Save the comment first
-				// This ensure the associating script exists
-				comm.save( ( e ) => {
+				data[ target ].push( KRequest );
+
+				KRequest.save( ( e ) => {
 					if( this.__dbErr( e, callback ) ) return;
 
-					// Then save the script
 					data.save( ( e2 ) => {
 						if( this.__dbErr( e2, callback ) ) return;
 						callback( this.App.JsonSuccess() );
 					} );
-
 				} );
 			}
-		);
+		).populate( target );
 	}
 
+	GetRequests( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "id", "target" );
+
+		var pipelines = [];
+		pipelines.push({ $match: { uuid: postdata.id } });
+
+		switch( postdata.target )
+		{
+			case "key":
+				pipelines.push({ $project: { _id: "$key_requests" } });
+				break;
+
+			case "token":
+				pipelines.push({ $project: { _id: "$token_requests" } });
+				break;
+
+			default:
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+		}
+
+		this.utils.use( "math" );
+		var skip = Math.abs( parseInt( postdata.skip ) || 0 );
+		var limit = this.utils.clamp( parseInt( postdata.limit ) || 30, 1, 100 );
+
+		// XXX: See GetComments
+		pipelines.push({ $unwind: "$_id" });
+		pipelines.push({ $lookup: { from: "requests", localField: "_id", foreignField: "_id", as: "data" } });
+		pipelines.push({ $unwind: "$data" });
+
+		// pagination
+		pipelines.push({ $sort: { "data.date_created": -1 } });
+		pipelines.push({ $skip: skip });
+		pipelines.push({ $limit: limit });
+
+		// Find the associated user
+		pipelines.push({ $lookup: { from: "users", localField: "data.author", foreignField: "_id", as: "author" } });
+		pipelines.push({ $unwind: "$author" });
+
+		// Project finally
+		pipelines.push({ $project: {
+			"pubkey": "$data.pubkey"
+			, "remarks": "$data.remarks"
+			, "date_created": "$data.date_created"
+			, "author._id": "$author._id"
+			, "author.name": "$author.profile.display_name"
+		} });
+
+		Model.Script.aggregate( pipelines ).exec( ( e, data ) => {
+			if( this.__dbErr( e, callback ) ) return;
+			callback( this.App.JsonSuccess( data ) );
+		} );
+	}
+
+	ClearGrantedRecords( postdata, callback )
+	{
+	}
+
+	WithdrawRequest( postdata, callback )
+	{
+	}
+	/* End Key Requests }}}*/
+
+	/*{{{ Field Helpers */
 	__in( postdata, criteria, ...fields )
 	{
 		for( let field of fields )
@@ -512,6 +657,8 @@ class ScriptManager
 
 		return false;
 	}
+	/* End Field Helpers }}}*/
+
 }
 
 module.exports = ScriptManager;

@@ -322,6 +322,7 @@ class ScriptManager
 
 			default:
 				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+				return;
 		}
 
 		this.utils.use( "math" );
@@ -453,6 +454,8 @@ class ScriptManager
 				KRequest.author = this.App.Auth.user;
 				KRequest.pubkey = postdata.pubkey;
 				KRequest.remarks = postdata.remarks;
+				KRequest.script = data;
+				KRequest.target = target;
 
 				// Only one request per user per script
 				for( let exReq of data[ target ] )
@@ -497,6 +500,7 @@ class ScriptManager
 
 			default:
 				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.target ) );
+				return;
 		}
 
 		this.utils.use( "math" );
@@ -532,12 +536,67 @@ class ScriptManager
 		} );
 	}
 
-	ClearGrantedRecords( postdata, callback )
+	// Requests are granted anonymously
+	GrantRequest( postdata, callback )
 	{
+		Validation.NOT_EMPTY( postdata, "id", "grant" );
+
+		Model.Request.findById( postdata.id, { grants: true }, ( e, data ) => {
+			if( this.__dbErr( e, callback ) ) return;
+			if( !data )
+			{
+				callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+				return;
+			}
+
+			data.grants.push( postdata.grant );
+			data.save(( e ) => {
+				if( this.__dbErr( e, callback ) ) return;
+				callback( this.App.JsonSuccess() );
+			} );
+
+		} );
+	}
+
+	MyRequests( postdata, callback )
+	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+
+		Model.Request.find({ author: this.App.Auth.user }, ( e, items ) => {
+			if( this.__dbErr( e, callback ) ) return;
+
+			var output = [];
+
+			this.utils.use( "object" );
+			for( let item of items )
+			{
+				var saneData = this.utils.refObj(
+					item
+					, "_id", "target", "script", "date_created", "grants"
+				);
+
+				output.push( saneData );
+			}
+
+			callback( this.App.JsonSuccess( output ) );
+		} ).populate({
+			path: "script"
+			, select: { "uuid": true, "name": true }
+			, model: Model.Script
+		});
+	}
+
+	ClearGrantRecords( postdata, callback )
+	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 	}
 
 	WithdrawRequest( postdata, callback )
 	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 	}
 	/* End Key Requests }}}*/
 

@@ -96,12 +96,46 @@ function TestRequest() {
 			goalend
 		}
 
+		GID=$( grep '"data":\[{"_id":"\([^"]\+\)"' -o $TempFile | sed -e "s/\"//g" -e "s/data:\\[{_id://g" )
+
 		goalend
+	}
+}
+
+function GrantRequest() {
+	TYPE=$1
+	MESG="This is the granted $TYPE"
+	goal "Granting $TYPE Requests for $GID"
+	{
+		declare -A POSTDATA=(
+			["action"]="grant-request"
+			["grant"]="$MESG"
+			["lang"]="$RLANG"
+		)
+
+		assert_wrong_empty "$TYPE" $GID
+
+		goalend
+	}
+
+	goal "Checking the Granted Data"
+	{
+		declare -A POSTDATA=(
+			["action"]="my-requests"
+			["lang"]="$RLANG"
+		)
+
+		SEND_COOKIE=true
+		. ./tests/assert_jsuccess
+
+		grep -q -o "\"uuid\":\"$UUID\".\\+\"grants\":\\[\"$MESG\"\\]" $TempFile
+		exitOk $? "Unable to grant $TYPE"
 	}
 }
 
 . ./tests/002_login
 TestRequest "key"
+GrantRequest "key"
 TestRequest "token"
+GrantRequest "token"
 . ./tests/003_logout
-

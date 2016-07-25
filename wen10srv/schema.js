@@ -77,6 +77,8 @@ var M_Request = new Schema({
 	, pubkey: String
 	, grants: [ String ]
 	, remarks: String
+	, target: String
+	, script: R_Script
 	, date_created: { type: Date, default: Date.now }
 });
 

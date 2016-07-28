@@ -262,7 +262,7 @@ class ScriptManager
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+					callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 					return;
 				}
 
@@ -446,28 +446,33 @@ class ScriptManager
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+					callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 					return;
 				}
 
+				// Only one request per user per script
+				var ReplaceRequest = false;
 				var KRequest = new Model.Request();
+
+				for( let exReq of data[ target ] )
+				{
+					// Replace the public key
+					if( exReq.author.equals( this.App.Auth.user.id ) )
+					{
+						Dragonfly.Debug( "Replacing Request" );
+						KRequest = exReq;
+						ReplaceRequest = true;
+						break;
+					}
+				}
+
 				KRequest.author = this.App.Auth.user;
 				KRequest.pubkey = postdata.pubkey;
 				KRequest.remarks = postdata.remarks;
 				KRequest.script = data;
 				KRequest.target = target;
 
-				// Only one request per user per script
-				for( let exReq of data[ target ] )
-				{
-					if( exReq.author.equals( this.App.Auth.user.id ) )
-					{
-						callback( this.App.JsonError( Locale.ScriptManager.REQUEST_EXISTS, target ) );
-						return;
-					}
-				}
-
-				data[ target ].push( KRequest );
+				if( !ReplaceRequest ) data[ target ].push( KRequest );
 
 				KRequest.save( ( e ) => {
 					if( this.__dbErr( e, callback ) ) return;
@@ -545,7 +550,7 @@ class ScriptManager
 			if( this.__dbErr( e, callback ) ) return;
 			if( !data )
 			{
-				callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 				return;
 			}
 
@@ -603,7 +608,7 @@ class ScriptManager
 				switch( data.nModified )
 				{
 					case 0:
-						callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+						callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 						break;
 					case 1:
 						callback( this.App.JsonSuccess() );
@@ -631,7 +636,7 @@ class ScriptManager
 				switch( data.result.n )
 				{
 					case 0:
-						callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+						callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 						break;
 					case 1:
 						callback( this.App.JsonSuccess() );

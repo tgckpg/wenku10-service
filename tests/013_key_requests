@@ -70,7 +70,7 @@ function TestRequest() {
 				["id"]=$UUID
 			)
 
-			. ./tests/assert_jfail
+			. ./tests/assert_jsuccess
 			goalend
 		}
 

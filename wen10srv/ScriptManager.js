@@ -245,8 +245,7 @@ class ScriptManager
 				model = "Comment";
 				target = "replies";
 
-				if( !ObjectId.isValid( postdata.id ) )
-					throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
+				Validation.OBJECT_ID( postdata.id );
 
 				crit_id._id = ObjectId( postdata.id );
 				break;
@@ -459,7 +458,7 @@ class ScriptManager
 					// Replace the public key
 					if( exReq.author.equals( this.App.Auth.user.id ) )
 					{
-						Dragonfly.Debug( "Replacing Request" );
+						Dragonfly.Debug( "Replacing Request: " + exReq._id );
 						KRequest = exReq;
 						ReplaceRequest = true;
 						break;
@@ -545,6 +544,7 @@ class ScriptManager
 	GrantRequest( postdata, callback )
 	{
 		Validation.NOT_EMPTY( postdata, "id", "grant" );
+		Validation.OBJECT_ID( postdata.id );
 
 		Model.Request.findById( postdata.id, { grants: true }, ( e, data ) => {
 			if( this.__dbErr( e, callback ) ) return;
@@ -578,8 +578,14 @@ class ScriptManager
 			{
 				var saneData = this.utils.refObj(
 					item
-					, "_id", "target", "script", "date_created", "grants"
+					, "_id", "target", "date_created", "grants"
 				);
+
+				if( item.script )
+				{
+					var script = this.utils.refObj( item.script, "uuid", "name" );
+					saneData.script = script;
+				}
 
 				output.push( saneData );
 			}
@@ -598,6 +604,7 @@ class ScriptManager
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
 		Validation.NOT_EMPTY( postdata, "id" );
+		Validation.OBJECT_ID( postdata.id );
 
 		Model.Request.update(
 			{ _id: ObjectId( postdata.id ), author: this.App.Auth.user }
@@ -627,6 +634,7 @@ class ScriptManager
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
 		Validation.NOT_EMPTY( postdata, "id" );
+		Validation.OBJECT_ID( postdata.id );
 
 		Model.Request.remove(
 			{ _id: ObjectId( postdata.id ), author: this.App.Auth.user }

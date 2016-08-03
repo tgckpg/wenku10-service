@@ -9,7 +9,7 @@ class DataSetter
 			var v = postdata[ arg ];
 			if( !v ) continue;
 
-			item[ arg ] = Array.isArray( v ) ? v : v.split( "\n" );
+			item[ arg ] = ( Array.isArray( v ) ? v : v.split( "\n" ) ).map( Function.prototype.call, String.prototype.trim );
 		}
 	}
 }

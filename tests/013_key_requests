@@ -70,7 +70,7 @@ function TestRequest() {
 				["id"]=$UUID
 			)
 
-			. ./tests/assert_jfail
+			. ./tests/assert_jsuccess
 			goalend
 		}
 
@@ -128,7 +128,7 @@ function GrantRequest() {
 		SEND_COOKIE=true
 		. ./tests/assert_jsuccess
 
-		grep -q -o "\"uuid\":\"$UUID\".\\+\"grants\":\\[\"$MESG\"\\]" $TempFile
+		grep -q -o "\"grants\":\\[\"$MESG\"\\].\\+\"uuid\":\"$UUID\"" $TempFile
 		exitOk $? "Unable to grant $TYPE"
 	}
 }
@@ -158,7 +158,7 @@ function ClearGrants() {
 		SEND_COOKIE=true
 		. ./tests/assert_jsuccess
 
-		grep -q -o "\"uuid\":\"$UUID\".\\+\"grants\":\\[\\]" $TempFile
+		grep -q -o "\"grants\":\\[\\].\\+\"uuid\":\"$UUID\"" $TempFile
 		exitOk $? "Grant is still present"
 	}
 }

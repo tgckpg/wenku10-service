@@ -3,6 +3,8 @@
 const cl = global.botanLoader;
 const Locale = cl.load( "botansx.modular.localization" );
 
+const ObjectId = require( "mongoose" ).Types.ObjectId;
+
 class ValidationError
 {
 	constructor( message, ...params )
@@ -45,6 +47,12 @@ class Validation
 	{
 		if( !EmailRe.test( email ) )
 			throw new ValidationError( Locale.Validation.INVALID_EMAIL );
+	}
+
+	static OBJECT_ID( id )
+	{
+		if( !ObjectId.isValid( id ) )
+			throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
 	}
 }
 

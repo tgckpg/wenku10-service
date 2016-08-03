@@ -245,8 +245,7 @@ class ScriptManager
 				model = "Comment";
 				target = "replies";
 
-				if( !ObjectId.isValid( postdata.id ) )
-					throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
+				Validation.OBJECT_ID( postdata.id );
 
 				crit_id._id = ObjectId( postdata.id );
 				break;
@@ -262,7 +261,7 @@ class ScriptManager
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+					callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 					return;
 				}
 
@@ -446,28 +445,33 @@ class ScriptManager
 
 				if( !data )
 				{
-					callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+					callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 					return;
 				}
 
+				// Only one request per user per script
+				var ReplaceRequest = false;
 				var KRequest = new Model.Request();
+
+				for( let exReq of data[ target ] )
+				{
+					// Replace the public key
+					if( exReq.author.equals( this.App.Auth.user.id ) )
+					{
+						Dragonfly.Debug( "Replacing Request: " + exReq._id );
+						KRequest = exReq;
+						ReplaceRequest = true;
+						break;
+					}
+				}
+
 				KRequest.author = this.App.Auth.user;
 				KRequest.pubkey = postdata.pubkey;
 				KRequest.remarks = postdata.remarks;
 				KRequest.script = data;
 				KRequest.target = target;
 
-				// Only one request per user per script
-				for( let exReq of data[ target ] )
-				{
-					if( exReq.author.equals( this.App.Auth.user.id ) )
-					{
-						callback( this.App.JsonError( Locale.ScriptManager.REQUEST_EXISTS, target ) );
-						return;
-					}
-				}
-
-				data[ target ].push( KRequest );
+				if( !ReplaceRequest ) data[ target ].push( KRequest );
 
 				KRequest.save( ( e ) => {
 					if( this.__dbErr( e, callback ) ) return;
@@ -540,12 +544,13 @@ class ScriptManager
 	GrantRequest( postdata, callback )
 	{
 		Validation.NOT_EMPTY( postdata, "id", "grant" );
+		Validation.OBJECT_ID( postdata.id );
 
 		Model.Request.findById( postdata.id, { grants: true }, ( e, data ) => {
 			if( this.__dbErr( e, callback ) ) return;
 			if( !data )
 			{
-				callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 				return;
 			}
 
@@ -573,8 +578,14 @@ class ScriptManager
 			{
 				var saneData = this.utils.refObj(
 					item
-					, "_id", "target", "script", "date_created", "grants"
+					, "_id", "target", "date_created", "grants"
 				);
+
+				if( item.script )
+				{
+					var script = this.utils.refObj( item.script, "uuid", "name" );
+					saneData.script = script;
+				}
 
 				output.push( saneData );
 			}
@@ -593,6 +604,7 @@ class ScriptManager
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
 		Validation.NOT_EMPTY( postdata, "id" );
+		Validation.OBJECT_ID( postdata.id );
 
 		Model.Request.update(
 			{ _id: ObjectId( postdata.id ), author: this.App.Auth.user }
@@ -603,7 +615,7 @@ class ScriptManager
 				switch( data.nModified )
 				{
 					case 0:
-						callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+						callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 						break;
 					case 1:
 						callback( this.App.JsonSuccess() );
@@ -622,6 +634,7 @@ class ScriptManager
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 
 		Validation.NOT_EMPTY( postdata, "id" );
+		Validation.OBJECT_ID( postdata.id );
 
 		Model.Request.remove(
 			{ _id: ObjectId( postdata.id ), author: this.App.Auth.user }
@@ -631,7 +644,7 @@ class ScriptManager
 				switch( data.result.n )
 				{
 					case 0:
-						callback( this.App.JsonError( Locale.ScriptManager.NO_SUCH_TARGET, postdata.id ) );
+						callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
 						break;
 					case 1:
 						callback( this.App.JsonSuccess() );

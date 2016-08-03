@@ -1,0 +1,16 @@
+#!/bash/bash
+
+declare -A POSTDATA=(
+	["uuid"]="$UUID"
+	["action"]="upload"
+	["name"]="Publish 3000"
+	["desc"]="Example Description 3000"
+	["encrypted"]="0"
+	["zone"]="RZone"
+	["type"]="Type C"
+	["data"]="
+<xml>
+	<test>Test test</test>
+</xml>
+"
+)

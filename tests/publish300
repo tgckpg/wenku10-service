@@ -1,0 +1,17 @@
+#!/bin/bash
+
+
+for i in {1..300}; do
+	. ./tests/004_reserve_uuid
+	. ./tests/postscripts/for_publish300
+	POSTDATA["name"]="Publish $i"
+	. ./tests/assert_token_access
+	declare -A POSTDATA=(
+		["action"]="publish"
+		["uuid"]="$UUID"
+		["public"]="1"
+		["lang"]="$RLANG"
+	)
+
+	. ./tests/assert_token_access
+done

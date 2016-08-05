@@ -67,7 +67,7 @@ var M_User = new Schema({
 	, email: String
 	, active: { type: Boolean, default: true }
 	, profile: {
-		display_name: String, email: String
+		display_name: String
 	}
 });
 
@@ -86,6 +86,7 @@ var M_Comment = new Schema({
 	author: R_User
 	, content: String
 	, enc: Boolean
+	, ref_script: R_Script
 	, date_modified: { type: Date, default: Date.now }
 	, date_created: { type: Date, default: Date.now }
 	, enabled: { type: Boolean, default: true }

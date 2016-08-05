@@ -256,7 +256,7 @@ class ScriptManager
 		}
 
 		Model[ model ].findOne(
-				crit_id, { comments: true, replies: true }, ( e, data ) => {
+				crit_id, { comments: true, replies: true, ref_script: true }, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -269,6 +269,7 @@ class ScriptManager
 				comm.content = postdata.content;
 				comm.author = this.App.Auth.user;
 				comm.enc = ( postdata.enc == "1" );
+				comm.ref_script = ( model == "Script" ) ? data : data.ref_script;
 
 				data[ target ].push( comm );
 

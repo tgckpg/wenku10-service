@@ -60,11 +60,22 @@ class App extends Base
 
 			try
 			{
+				Dragonfly.Info(
+					( this.HTTP.request.raw.headers[ "x-forwarded-for" ] || this.HTTP.request.remoteAddr )
+					+ " POST: " + e.Data.action
+					+ " - " + this.HTTP.request.raw.headers["user-agent"]
+					, Dragonfly.Visibility.VISIBLE
+				);
+
 				// Auth Scope
 				switch( e.Data.action )
 				{
 					case "session-valid":
 						Render( new JsonProto( null, this.Auth.LoggedIn, "OK" ) );
+						return;
+
+					case "edit-profile":
+						this.Auth.UpdateProfile( e.Data, Render );
 						return;
 
 					case "login":
@@ -80,7 +91,7 @@ class App extends Base
 						Validation.NOT_EMPTY( e.Data, "user", "passwd", "email" );
 						Validation.PASSWD( e.Data.passwd );
 						Validation.EMAIL( e.Data.email );
-						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
+						this.Auth.Register( e.Data.user, e.Data.passwd, e.Data.email, Render );
 						return;
 
 					case "passwd":

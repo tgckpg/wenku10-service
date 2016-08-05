@@ -26,10 +26,12 @@ class Auth
 		if( !this.LoggedIn )
 		{
 			callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
+			return;
 		}
 
 		Validation.NOT_EMPTY( postdata, "display_name" );
 
+		var session = this.Control.session;
 		Model.User.findById( session.get( "user.id" ) ).exec(
 			( err, data ) => {
 				if( this.__dbErr( err, callback ) ) return;
@@ -38,6 +40,27 @@ class Auth
 				data.save( ( sErr ) => {
 					if( this.__dbErr( sErr, callback ) ) return;
 					callback( this.App.JsonSuccess() );
+				});
+			}
+		);
+	}
+
+	MyProfile( callback )
+	{
+		if( !this.LoggedIn )
+		{
+			callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
+			return;
+		}
+
+		var session = this.Control.session;
+		Model.User.findById( session.get( "user.id" ) ).exec(
+			( err, data ) => {
+				if( this.__dbErr( err, callback ) ) return;
+
+				data.save( ( sErr ) => {
+					if( this.__dbErr( sErr, callback ) ) return;
+					callback( this.App.JsonSuccess( data.profile ) );
 				});
 			}
 		);

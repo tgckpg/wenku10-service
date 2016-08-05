@@ -74,13 +74,17 @@ class App extends Base
 						Render( new JsonProto( null, this.Auth.LoggedIn, "OK" ) );
 						return;
 
+					case "login":
+						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
+						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
+						return;
+
 					case "edit-profile":
 						this.Auth.UpdateProfile( e.Data, Render );
 						return;
 
-					case "login":
-						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
-						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
+					case "my-profile":
+						this.Auth.MyProfile( Render );
 						return;
 
 					case "logout":

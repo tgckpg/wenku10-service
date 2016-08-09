@@ -29,6 +29,13 @@ class App extends Base
 
 		if( !this.HTTP.request.isPost )
 		{
+			Dragonfly.Info(
+				( this.HTTP.request.raw.headers[ "x-forwarded-for" ] || this.HTTP.request.remoteAddr )
+				+ " GET: " + this.HTTP.request.uri.path
+				+ " - " + this.HTTP.request.raw.headers["user-agent"]
+				, Dragonfly.Visibility.VISIBLE
+			);
+
 			if( this.HTTP.request.uri.path != "/" )
 			{
 				this.result = "Hi :P";
@@ -116,6 +123,7 @@ class App extends Base
 					case "grant-request"         : mgr.GrantRequest( e.Data, Render ); return;
 					case "get-requests"          : mgr.GetRequests( e.Data, Render ); return;
 					case "my-requests"           : mgr.MyRequests( e.Data, Render ); return;
+					case "my-inbox"              : mgr.MyInbox( e.Data, Render ); return;
 					case "clear-grant-records"   : mgr.ClearGrantRecords( e.Data, Render ); return;
 					case "withdraw-request"      : mgr.WithdrawRequest( e.Data, Render ); return;
 					case "status-report"         : mgr.PushStatus( e.Data, Render ); return;

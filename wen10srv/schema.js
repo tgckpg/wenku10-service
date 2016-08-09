@@ -24,6 +24,7 @@ var R_User = { type: Schema.Types.ObjectId, ref: "User" };
 var R_Comment = { type: Schema.Types.ObjectId, ref: "Comment" };
 var R_Script = { type: Schema.Types.ObjectId, ref: "Script" };
 var R_Request = { type: Schema.Types.ObjectId, ref: "Request" };
+var R_Notification = { type: Schema.Types.ObjectId, ref: "Notification" };
 /* End Schema Heads */
 
 var M_Script = new Schema({
@@ -69,6 +70,13 @@ var M_User = new Schema({
 	, profile: {
 		display_name: String
 	}
+
+	, nsubs: [ R_Notification ]
+});
+
+var M_Notification = new Schema({
+	type: Number
+	, inbox: Array
 });
 
 var M_Request = new Schema({
@@ -102,6 +110,7 @@ class DB extends EventEmitter
 		var Models = [
 			  { name: "User"    , schema: M_User      , hasKey: true }
 			, { name: "Script"  , schema: M_Script    , hasKey: true }
+			, { name: "Notification" , schema: M_Notification }
 			, { name: "Comment" , schema: M_Comment }
 			, { name: "Request" , schema: M_Request }
 		];

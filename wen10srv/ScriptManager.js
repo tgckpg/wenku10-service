@@ -8,6 +8,10 @@ const Validation = cl.load( "wen10srv.Validation" );
 const DataSetter = cl.load( "wen10srv.DataSetter" );
 const Locale = cl.load( "botansx.modular.localization" );
 
+const NotificationCenter = cl.load( "wen10srv.modular.notificationcenter" );
+const UserComment = cl.load( "wen10srv.modular.notifications.usercomment" );
+const CommentReply = cl.load( "wen10srv.modular.notifications.commentreply" );
+
 const ObjectId = require( "mongoose" ).Types.ObjectId;
 
 class ScriptManager
@@ -98,6 +102,16 @@ class ScriptManager
 		ScriptM.save( ( e ) => {
 			if( this.__dbErr( e, callback ) ) return;
 			callback( this.App.JsonSuccess( uuid ) );
+
+			if( this.App.Auth.LoggedIn )
+			{
+				var NCenter = new NotificationCenter();
+				NCenter.Subscribe(
+					this.App.Auth.user
+					, UserComment.ID
+					, uuid
+				);
+			}
 		} );
 	}
 
@@ -232,6 +246,7 @@ class ScriptManager
 		var crit_id = {};
 		var model;
 		var target;
+		var NotiModal;
 
 		switch( postdata.target )
 		{
@@ -239,6 +254,7 @@ class ScriptManager
 				model = "Script";
 				target = "comments";
 				crit_id.uuid = postdata.id;
+				NotiModal = UserComment;
 				break;
 
 			case "comment":
@@ -248,6 +264,7 @@ class ScriptManager
 				Validation.OBJECT_ID( postdata.id );
 
 				crit_id._id = ObjectId( postdata.id );
+				NotiModal = CommentReply;
 				break;
 
 			default:
@@ -256,7 +273,10 @@ class ScriptManager
 		}
 
 		Model[ model ].findOne(
-				crit_id, { comments: true, replies: true, ref_script: true }, ( e, data ) => {
+				crit_id, {
+					uuid: true, comments: true, replies: true
+					, author: true, ref_script: true
+				}, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -265,18 +285,30 @@ class ScriptManager
 					return;
 				}
 
-				var comm = new Model.Comment();
-				comm.content = postdata.content;
-				comm.author = this.App.Auth.user;
-				comm.enc = ( postdata.enc == "1" );
-				comm.ref_script = ( model == "Script" ) ? data : data.ref_script;
+				var comDat = new Model.Comment();
+				comDat.content = postdata.content;
+				comDat.author = this.App.Auth.user;
+				comDat.enc = ( postdata.enc == "1" );
+				comDat.ref_script = ( model == "Script" ) ? data : data.ref_script;
 
-				data[ target ].push( comm );
+				data[ target ].push( comDat );
 
 				// Save the comment first
 				// This ensure the associating script exists
-				comm.save( ( e ) => {
+				comDat.save( ( e ) => {
 					if( this.__dbErr( e, callback ) ) return;
+
+					if( data.author )
+					{
+						var NCenter = new NotificationCenter();
+						NCenter.Dispatch( NotiModal, [ data, comDat ] );
+
+						NCenter.Subscribe(
+							this.App.Auth.user
+							, CommentReply.ID
+							, comDat.id
+						);
+					}
 
 					// Then save the script
 					data.save( ( e2 ) => {
@@ -286,7 +318,7 @@ class ScriptManager
 
 				} );
 			}
-		);
+		).populate( "author" );
 	}
 
 	GetComments( postdata, callback, level )
@@ -658,6 +690,16 @@ class ScriptManager
 		);
 	}
 	/* End Key Requests }}}*/
+
+	MyInbox( postdata, callback )
+	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+
+		var NCenter = new NotificationCenter();
+		NCenter.NotisList( this.App.Auth.user, console.log );
+		callback( this.App.JsonSuccess() );
+	}
 
 	/*{{{ Field Helpers */
 	__in( postdata, criteria, ...fields )

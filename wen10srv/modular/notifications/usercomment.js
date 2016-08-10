@@ -22,15 +22,14 @@ class UserComment extends Base
 
 		var Commenter = Comment.author.profile.display_name
 
-		var Whoms = "your";
-		if( Script.author.id != this.__user.id )
-		{
-			Whoms = Script.author.profile.display_name + "'s ";
-		}
+		var Their = ( Script.author.id == this.__user.id )
+			? "your"
+			: Script.author.profile.display_name + "'s"
+			;
 
-		var mesg = Commenter + " has commented on " + Whoms + " script";
+		var mesg = Commenter + " has commented on " + Their + " script";
 
-		super.Dispatch( Script.uuid, mesg );
+		super.Dispatch( Script.uuid, mesg, "COMM," + Script.uuid + "," + Comment.id );
 	}
 }
 

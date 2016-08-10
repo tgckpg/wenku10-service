@@ -238,8 +238,7 @@ class ScriptManager
 	/*{{{ Comments */
 	Comment( postdata, callback )
 	{
-		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+		this.__AuthRequired();
 
 		Validation.NOT_EMPTY( postdata, "id", "target", "content" );
 
@@ -447,8 +446,7 @@ class ScriptManager
 	/*{{{ Key / Token Requests */
 	PlaceRequest( postdata, callback )
 	{
-		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+		this.__AuthRequired();
 
 		Validation.NOT_EMPTY( postdata, "id", "target", "pubkey", "remarks" );
 
@@ -598,8 +596,7 @@ class ScriptManager
 
 	MyRequests( postdata, callback )
 	{
-		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+		this.__AuthRequired();
 
 		Model.Request.find({ author: this.App.Auth.user }, ( e, items ) => {
 			if( this.__dbErr( e, callback ) ) return;
@@ -633,8 +630,7 @@ class ScriptManager
 
 	ClearGrantRecords( postdata, callback )
 	{
-		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+		this.__AuthRequired();
 
 		Validation.NOT_EMPTY( postdata, "id" );
 		Validation.OBJECT_ID( postdata.id );
@@ -663,8 +659,7 @@ class ScriptManager
 
 	WithdrawRequest( postdata, callback )
 	{
-		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+		this.__AuthRequired();
 
 		Validation.NOT_EMPTY( postdata, "id" );
 		Validation.OBJECT_ID( postdata.id );
@@ -691,15 +686,34 @@ class ScriptManager
 	}
 	/* End Key Requests }}}*/
 
+	/*{{{ Inbox Actions */
 	MyInbox( postdata, callback )
 	{
-		if( !this.App.Auth.LoggedIn )
-			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+		this.__AuthRequired();
 
 		var NCenter = new NotificationCenter();
-		NCenter.NotisList( this.App.Auth.user, console.log );
-		callback( this.App.JsonSuccess() );
+		NCenter.NotisList(
+			this.App.Auth.user
+			, ( err, dat ) => {
+				callback( this.App.JsonSuccess( dat ) )
+			}
+		);
 	}
+
+	MessageRead( postdata, callback )
+	{
+		this.__AuthRequired();
+
+		Validation.NOT_EMPTY( postdata, "id" );
+
+		var id = postdata.id;
+		var NCenter = new NotificationCenter();
+
+		NCenter.Read( this.App.Auth.user, id, () =>
+			callback( this.App.JsonSuccess() )
+		);
+	}
+	/* End Inbox Actions }}}*/
 
 	/*{{{ Field Helpers */
 	__in( postdata, criteria, ...fields )
@@ -816,6 +830,12 @@ class ScriptManager
 		}
 
 		return false;
+	}
+
+	__AuthRequired()
+	{
+		if( !this.App.Auth.LoggedIn )
+			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
 	}
 	/* End Field Helpers }}}*/
 

@@ -16,7 +16,7 @@ class CommentReply extends Base
 		// Do not put a notification to oneself
 		if( this.__user.id == Comment.author.id )
 		{
-			Dragonfly.Debug( "The comment is made by the this user, doing nothing" );
+			Dragonfly.Debug( "The comment is made by this user, doing nothing" );
 			return;
 		}
 
@@ -29,7 +29,7 @@ class CommentReply extends Base
 		var Commenter = Comment.author.profile.display_name;
 		var mesg = Commenter + " has replied to " + Their + " comment";
 
-		super.Dispatch( CommentStack.id, mesg, CommentStack.ref_script );
+		super.Dispatch( CommentStack.id, mesg, "COMM," + CommentStack.ref_script + "," +  CommentStack.id );
 	}
 }
 

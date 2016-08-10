@@ -124,6 +124,7 @@ class App extends Base
 					case "get-requests"          : mgr.GetRequests( e.Data, Render ); return;
 					case "my-requests"           : mgr.MyRequests( e.Data, Render ); return;
 					case "my-inbox"              : mgr.MyInbox( e.Data, Render ); return;
+					case "mesg-read"             : mgr.MessageRead( e.Data, Render ); return;
 					case "clear-grant-records"   : mgr.ClearGrantRecords( e.Data, Render ); return;
 					case "withdraw-request"      : mgr.WithdrawRequest( e.Data, Render ); return;
 					case "status-report"         : mgr.PushStatus( e.Data, Render ); return;

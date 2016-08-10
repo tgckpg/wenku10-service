@@ -129,12 +129,11 @@ class NotificationCenter
 
 				if( N.Messages.length )
 				{
-					Array.prototype.push
-					.apply( AllMessage, N.Messages );
+					Array.prototype.push.apply( AllMessage, N.Messages );
 				}
 			}
 
-			handler( undefined, AllMessage );
+			handler( err, AllMessage );
 		} );
 	}
 

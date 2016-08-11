@@ -149,6 +149,6 @@ class DB extends EventEmitter
 
 		if( !_widxl ) ready();
 	}
-};
+}
 
 module.exports = new DB();

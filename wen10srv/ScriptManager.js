@@ -272,10 +272,10 @@ class ScriptManager
 		}
 
 		Model[ model ].findOne(
-				crit_id, {
-					uuid: true, comments: true, replies: true
-					, author: true, ref_script: true
-				}, ( e, data ) => {
+			crit_id, {
+				uuid: true, comments: true, replies: true
+				, author: true, ref_script: true
+			}, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -289,6 +289,7 @@ class ScriptManager
 				comDat.author = this.App.Auth.user;
 				comDat.enc = ( postdata.enc == "1" );
 				comDat.ref_script = ( model == "Script" ) ? data : data.ref_script;
+				console.log( data.ref_script );
 
 				data[ target ].push( comDat );
 
@@ -317,7 +318,11 @@ class ScriptManager
 
 				} );
 			}
-		).populate( "author" );
+		).populate([ "author", {
+			path: "ref_script"
+			, select: { "uuid": true }
+			, model: Model.Script
+		} ]);
 	}
 
 	// Get a Single stack of comment
@@ -342,17 +347,21 @@ class ScriptManager
 			);
 
 			saneData.content = data.enabled ? data.content : data.remarks;
+			saneData.author = data.author
+				? { _id: data.author._id, name: data.author.profile.display_name }
+				: null;
+
 
 			this.GetComments(
 				{ target: "comment", id: postdata.id }
 				, ( e ) => {
 					saneData.replies = e.data;
-					callback( this.App.JsonSuccess( saneData ) );
+					callback( this.App.JsonSuccess([ saneData ]) );
 				}
 				, 5
 			);
 
-		} );
+		} ).populate( "author" );
 	}
 
 	GetComments( postdata, callback, level )

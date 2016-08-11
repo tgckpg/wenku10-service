@@ -1,10 +1,11 @@
 "use strict";
 
-var cl = global.botanLoader;
-var Dragonfly = global.Dragonfly;
+const cl = global.botanLoader;
+const Dragonfly = global.Dragonfly;
 
-var util = require( "util" );
-var Base = cl.load( "wen10srv.modular.notifications.subboxnotis" );
+const Base = cl.load( "wen10srv.modular.notifications.subboxnotis" );
+
+const Locale = cl.load( "botansx.modular.localization" );
 
 class UserComment extends Base
 {
@@ -20,14 +21,15 @@ class UserComment extends Base
 			return;
 		}
 
+		var lang = this.__user.lang;
 		var Commenter = Comment.author.profile.display_name
 
 		var Their = ( Script.author.id == this.__user.id )
-			? "your"
-			: Script.author.profile.display_name + "'s"
+			? Locale.Notis.YOUR( lang )
+			: Locale.Notis.POSSESSIVE( lang ).L( Script.author.profile.display_name );
 			;
 
-		var mesg = Commenter + " has commented on " + Their + " script";
+		var mesg = Locale.Notis.USER_COMMENT( lang ).L( Commenter, Their );
 
 		super.Dispatch( Script.uuid, mesg, "COMM," + Script.uuid + "," + Comment.id );
 	}

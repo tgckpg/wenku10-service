@@ -1,10 +1,11 @@
 "use strict";
 
-var cl = global.botanLoader;
-var Dragonfly = global.Dragonfly;
+const cl = global.botanLoader;
+const Dragonfly = global.Dragonfly;
 
-var util = require( "util" );
-var Base = cl.load( "wen10srv.modular.notifications.subboxnotis" );
+const Base = cl.load( "wen10srv.modular.notifications.subboxnotis" );
+
+const Locale = cl.load( "botansx.modular.localization" );
 
 class CommentReply extends Base
 {
@@ -20,16 +21,17 @@ class CommentReply extends Base
 			return;
 		}
 
+		var lang = this.__user.lang;
 		var StackAuthor = CommentStack.author;
 
 		var Their = StackAuthor.id == this.__user.id
-			? "your"
-			: StackAuthor.profile.display_name + "'s";
+			? Locale.Notis.YOUR( lang )
+			: Locale.Notis.POSSESSIVE( lang ).L( StackAuthor.profile.display_name );
 
 		var Commenter = Comment.author.profile.display_name;
-		var mesg = Commenter + " has replied to " + Their + " comment";
+		var mesg = Locale.Notis.COMMENT_REPLY( lang ).L( Commenter, Their );
 
-		super.Dispatch( CommentStack.id, mesg, "COMM," + CommentStack.ref_script + "," +  CommentStack.id );
+		super.Dispatch( CommentStack.id, mesg, "COMM," + CommentStack.ref_script.uuid + "," +  CommentStack.id );
 	}
 }
 

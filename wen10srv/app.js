@@ -118,6 +118,7 @@ class App extends Base
 				{
 					case "comment"               : mgr.Comment( e.Data, Render ); return;
 					case "get-comment"           : mgr.GetComments( e.Data, Render, 3 ); return;
+					case "get-comment-stack"     : mgr.GetCommentStack( e.Data, Render ); return;
 					case "search"                : mgr.Search( e.Data, Render ); return;
 					case "place-request"         : mgr.PlaceRequest( e.Data, Render ); return;
 					case "grant-request"         : mgr.GrantRequest( e.Data, Render ); return;

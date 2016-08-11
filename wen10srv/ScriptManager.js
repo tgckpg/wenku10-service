@@ -320,6 +320,41 @@ class ScriptManager
 		).populate( "author" );
 	}
 
+	// Get a Single stack of comment
+	GetCommentStack( postdata, callback )
+	{
+		Validation.NOT_EMPTY( postdata, "id" );
+
+		Model.Comment.findById( postdata.id, ( e, data ) => {
+			if( this.__dbErr( e, callback ) ) return;
+
+			if( !data )
+			{
+				callback( this.App.JsonError( Locale.Error.NO_SUCH_TARGET, postdata.id ) );
+				return;
+			}
+
+			this.utils.use( "object" );
+			var saneData = this.utils.refObj(
+				data
+				, "_id", "ref_script", "enc"
+				, "date_created", "date_modified"
+			);
+
+			saneData.content = data.enabled ? data.content : data.remarks;
+
+			this.GetComments(
+				{ target: "comment", id: postdata.id }
+				, ( e ) => {
+					saneData.replies = e.data;
+					callback( this.App.JsonSuccess( saneData ) );
+				}
+				, 5
+			);
+
+		} );
+	}
+
 	GetComments( postdata, callback, level )
 	{
 		Validation.NOT_EMPTY( postdata, "id", "target" );

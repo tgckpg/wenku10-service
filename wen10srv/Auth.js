@@ -171,6 +171,7 @@ class Auth
 				User.password = bcrypt.hashSync( password ).replace( /^\$2a/, "$2y" );
 				User.email = email;
 				User.profile.display_name = User.name;
+				User.lang = this.App.Lang;
 
 				User.save( ( sErr ) => {
 					if( this.__dbErr( sErr, callback ) ) return;

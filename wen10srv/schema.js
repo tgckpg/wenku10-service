@@ -71,6 +71,7 @@ var M_User = new Schema({
 		display_name: String
 	}
 
+	, lang: { type: String, default: "en-US" }
 	, nsubs: [ R_Notification ]
 });
 

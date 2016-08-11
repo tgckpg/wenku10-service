@@ -289,7 +289,6 @@ class ScriptManager
 				comDat.author = this.App.Auth.user;
 				comDat.enc = ( postdata.enc == "1" );
 				comDat.ref_script = ( model == "Script" ) ? data : data.ref_script;
-				console.log( data.ref_script );
 
 				data[ target ].push( comDat );
 

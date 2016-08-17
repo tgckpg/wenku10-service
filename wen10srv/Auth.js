@@ -6,6 +6,7 @@ const Dragonfly = global.Dragonfly;
 const bcrypt = require( "bcryptjs" );
 
 const Model = cl.load( "wen10srv.schema" );
+const Validation = cl.load( "wen10srv.Validation" );
 const Locale = cl.load( "botansx.modular.localization" );
 
 class Auth
@@ -19,6 +20,51 @@ class Auth
 
 	get user() { return this.Control.user; }
 	get LoggedIn() { return this.Control.LoggedIn; }
+
+	UpdateProfile( postdata, callback )
+	{
+		if( !this.LoggedIn )
+		{
+			callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
+			return;
+		}
+
+		Validation.NOT_EMPTY( postdata, "display_name" );
+
+		var session = this.Control.session;
+		Model.User.findById( session.get( "user.id" ) ).exec(
+			( err, data ) => {
+				if( this.__dbErr( err, callback ) ) return;
+
+				data.profile.display_name = postdata.display_name;
+				data.save( ( sErr ) => {
+					if( this.__dbErr( sErr, callback ) ) return;
+					callback( this.App.JsonSuccess() );
+				});
+			}
+		);
+	}
+
+	MyProfile( callback )
+	{
+		if( !this.LoggedIn )
+		{
+			callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
+			return;
+		}
+
+		var session = this.Control.session;
+		Model.User.findById( session.get( "user.id" ) ).exec(
+			( err, data ) => {
+				if( this.__dbErr( err, callback ) ) return;
+
+				data.save( ( sErr ) => {
+					if( this.__dbErr( sErr, callback ) ) return;
+					callback( this.App.JsonSuccess( data.profile ) );
+				});
+			}
+		);
+	}
 
 	Authenticate( username, password, callback )
 	{
@@ -108,7 +154,7 @@ class Auth
 		);
 	}
 
-	Register( username, password, callback )
+	Register( username, password, email, callback )
 	{
 		Model.User.findOne({ name: username }).exec(
 			( err, data ) => {
@@ -123,7 +169,9 @@ class Auth
 				var User = new Model.User();
 				User.name = username;
 				User.password = bcrypt.hashSync( password ).replace( /^\$2a/, "$2y" );
+				User.email = email;
 				User.profile.display_name = User.name;
+				User.lang = this.App.Lang;
 
 				User.save( ( sErr ) => {
 					if( this.__dbErr( sErr, callback ) ) return;

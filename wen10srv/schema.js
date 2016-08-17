@@ -24,6 +24,7 @@ var R_User = { type: Schema.Types.ObjectId, ref: "User" };
 var R_Comment = { type: Schema.Types.ObjectId, ref: "Comment" };
 var R_Script = { type: Schema.Types.ObjectId, ref: "Script" };
 var R_Request = { type: Schema.Types.ObjectId, ref: "Request" };
+var R_Notification = { type: Schema.Types.ObjectId, ref: "Notification" };
 /* End Schema Heads */
 
 var M_Script = new Schema({
@@ -67,8 +68,16 @@ var M_User = new Schema({
 	, email: String
 	, active: { type: Boolean, default: true }
 	, profile: {
-		display_name: String, email: String
+		display_name: String
 	}
+
+	, lang: { type: String, default: "en-US" }
+	, nsubs: [ R_Notification ]
+});
+
+var M_Notification = new Schema({
+	type: Number
+	, inbox: Array
 });
 
 var M_Request = new Schema({
@@ -86,6 +95,7 @@ var M_Comment = new Schema({
 	author: R_User
 	, content: String
 	, enc: Boolean
+	, ref_script: R_Script
 	, date_modified: { type: Date, default: Date.now }
 	, date_created: { type: Date, default: Date.now }
 	, enabled: { type: Boolean, default: true }
@@ -101,6 +111,7 @@ class DB extends EventEmitter
 		var Models = [
 			  { name: "User"    , schema: M_User      , hasKey: true }
 			, { name: "Script"  , schema: M_Script    , hasKey: true }
+			, { name: "Notification" , schema: M_Notification }
 			, { name: "Comment" , schema: M_Comment }
 			, { name: "Request" , schema: M_Request }
 		];
@@ -138,6 +149,6 @@ class DB extends EventEmitter
 
 		if( !_widxl ) ready();
 	}
-};
+}
 
 module.exports = new DB();

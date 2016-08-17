@@ -22,7 +22,7 @@ db.on( "error", ThrowEverything );
 mongoose.connect( options.host, options.auth );
 
 var i = 0;
-var rmCollection = [ "users", "scripts", "comments", "requests" ];
+var rmCollection = [ "users", "scripts", "comments", "requests", "notifications" ];
 var l = rmCollection.length;
 
 var TestThenExit = function() {

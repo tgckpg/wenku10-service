@@ -29,6 +29,13 @@ class App extends Base
 
 		if( !this.HTTP.request.isPost )
 		{
+			Dragonfly.Info(
+				( this.HTTP.request.raw.headers[ "x-forwarded-for" ] || this.HTTP.request.remoteAddr )
+				+ " GET: " + this.HTTP.request.uri.path
+				+ " - " + this.HTTP.request.raw.headers["user-agent"]
+				, Dragonfly.Visibility.VISIBLE
+			);
+
 			if( this.HTTP.request.uri.path != "/" )
 			{
 				this.result = "Hi :P";
@@ -60,6 +67,13 @@ class App extends Base
 
 			try
 			{
+				Dragonfly.Info(
+					( this.HTTP.request.raw.headers[ "x-forwarded-for" ] || this.HTTP.request.remoteAddr )
+					+ " POST: " + e.Data.action
+					+ " - " + this.HTTP.request.raw.headers["user-agent"]
+					, Dragonfly.Visibility.VISIBLE
+				);
+
 				// Auth Scope
 				switch( e.Data.action )
 				{
@@ -72,6 +86,14 @@ class App extends Base
 						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
 						return;
 
+					case "edit-profile":
+						this.Auth.UpdateProfile( e.Data, Render );
+						return;
+
+					case "my-profile":
+						this.Auth.MyProfile( Render );
+						return;
+
 					case "logout":
 						this.Auth.DeAuth( Render );
 						return;
@@ -80,7 +102,7 @@ class App extends Base
 						Validation.NOT_EMPTY( e.Data, "user", "passwd", "email" );
 						Validation.PASSWD( e.Data.passwd );
 						Validation.EMAIL( e.Data.email );
-						this.Auth.Register( e.Data.user, e.Data.passwd, Render );
+						this.Auth.Register( e.Data.user, e.Data.passwd, e.Data.email, Render );
 						return;
 
 					case "passwd":
@@ -96,11 +118,14 @@ class App extends Base
 				{
 					case "comment"               : mgr.Comment( e.Data, Render ); return;
 					case "get-comment"           : mgr.GetComments( e.Data, Render, 3 ); return;
+					case "get-comment-stack"     : mgr.GetCommentStack( e.Data, Render ); return;
 					case "search"                : mgr.Search( e.Data, Render ); return;
 					case "place-request"         : mgr.PlaceRequest( e.Data, Render ); return;
 					case "grant-request"         : mgr.GrantRequest( e.Data, Render ); return;
 					case "get-requests"          : mgr.GetRequests( e.Data, Render ); return;
 					case "my-requests"           : mgr.MyRequests( e.Data, Render ); return;
+					case "my-inbox"              : mgr.MyInbox( e.Data, Render ); return;
+					case "mesg-read"             : mgr.MessageRead( e.Data, Render ); return;
 					case "clear-grant-records"   : mgr.ClearGrantRecords( e.Data, Render ); return;
 					case "withdraw-request"      : mgr.WithdrawRequest( e.Data, Render ); return;
 					case "status-report"         : mgr.PushStatus( e.Data, Render ); return;

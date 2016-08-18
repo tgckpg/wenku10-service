@@ -297,17 +297,16 @@ class ScriptManager
 				comDat.save( ( e ) => {
 					if( this.__dbErr( e, callback ) ) return;
 
+					var NCenter = new NotificationCenter();
+
 					if( data.author )
-					{
-						var NCenter = new NotificationCenter();
 						NCenter.Dispatch( NotiModal, [ data, comDat ] );
 
-						NCenter.Subscribe(
-							this.App.Auth.user
-							, CommentReply.ID
-							, comDat.id
-						);
-					}
+					NCenter.Subscribe(
+						this.App.Auth.user
+						, CommentReply.ID
+						, comDat.id
+					);
 
 					// Then save the script
 					data.save( ( e2 ) => {

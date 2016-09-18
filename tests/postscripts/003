@@ -8,6 +8,8 @@ declare -A POSTDATA=(
 	["encrypted"]="0"
 	["zone"]="Zone 2"
 	["type"]="Type B"
+	["scope"]="book"
+	["compat"]="1.0.0t"
 	["data"]="
 <xml>
 	<test2>MMMMM</test2>

@@ -53,11 +53,14 @@ class App extends Base
 	{
 		e.Handled = true;
 
+		var postData = e.Data;
+
 		this.Control = new UserControl( this );
 		this.Auth = new MAuth( this );
-		this.Lang = e.Data.lang || this.Lang;
+		this.Lang = postData.lang || this.Lang;
 
 		var Ready = () => {
+
 			this.HTTP.response.headers[ "Content-Type" ] = "application/json";
 
 			var Render = ( Json ) => {
@@ -69,25 +72,29 @@ class App extends Base
 			{
 				Dragonfly.Info(
 					( this.HTTP.request.raw.headers[ "x-forwarded-for" ] || this.HTTP.request.remoteAddr )
-					+ " POST: " + e.Data.action
+					+ " POST: " + postData.action
 					+ " - " + this.HTTP.request.raw.headers["user-agent"]
 					, Dragonfly.Visibility.VISIBLE
 				);
 
+				if( !postData.ver ) postData.ver = "1.0.0p";
+
+				Validation.APPVER( postData.ver );
+
 				// Auth Scope
-				switch( e.Data.action )
+				switch( postData.action )
 				{
 					case "session-valid":
 						Render( new JsonProto( null, this.Auth.LoggedIn, "OK" ) );
 						return;
 
 					case "login":
-						Validation.NOT_EMPTY( e.Data, "user", "passwd" );
-						this.Auth.Authenticate( e.Data.user, e.Data.passwd, Render );
+						Validation.NOT_EMPTY( postData, "user", "passwd" );
+						this.Auth.Authenticate( postData.user, postData.passwd, Render );
 						return;
 
 					case "edit-profile":
-						this.Auth.UpdateProfile( e.Data, Render );
+						this.Auth.UpdateProfile( postData, Render );
 						return;
 
 					case "my-profile":
@@ -99,44 +106,44 @@ class App extends Base
 						return;
 
 					case "register":
-						Validation.NOT_EMPTY( e.Data, "user", "passwd", "email" );
-						Validation.PASSWD( e.Data.passwd );
-						Validation.EMAIL( e.Data.email );
-						this.Auth.Register( e.Data.user, e.Data.passwd, e.Data.email, Render );
+						Validation.NOT_EMPTY( postData, "user", "passwd", "email" );
+						Validation.PASSWD( postData.passwd );
+						Validation.EMAIL( postData.email );
+						this.Auth.Register( postData.user, postData.passwd, postData.email, Render );
 						return;
 
 					case "passwd":
-						Validation.NOT_EMPTY( e.Data, "curr", "new" );
-						Validation.PASSWD( e.Data.new );
-						this.Auth.ChangePasswd( e.Data.curr, e.Data.new, Render );
+						Validation.NOT_EMPTY( postData, "curr", "new" );
+						Validation.PASSWD( postData.new );
+						this.Auth.ChangePasswd( postData.curr, postData.new, Render );
 						return;
 				}
 
 				// ScriptManager Scope
 				var mgr = new ScriptManager( this );
-				switch( e.Data.action )
+				switch( postData.action )
 				{
-					case "comment"               : mgr.Comment( e.Data, Render ); return;
-					case "get-comment"           : mgr.GetComments( e.Data, Render, 3 ); return;
-					case "get-comment-stack"     : mgr.GetCommentStack( e.Data, Render ); return;
-					case "search"                : mgr.Search( e.Data, Render ); return;
-					case "place-request"         : mgr.PlaceRequest( e.Data, Render ); return;
-					case "grant-request"         : mgr.GrantRequest( e.Data, Render ); return;
-					case "get-requests"          : mgr.GetRequests( e.Data, Render ); return;
-					case "my-requests"           : mgr.MyRequests( e.Data, Render ); return;
-					case "my-inbox"              : mgr.MyInbox( e.Data, Render ); return;
-					case "mesg-read"             : mgr.MessageRead( e.Data, Render ); return;
-					case "clear-grant-records"   : mgr.ClearGrantRecords( e.Data, Render ); return;
-					case "withdraw-request"      : mgr.WithdrawRequest( e.Data, Render ); return;
-					case "status-report"         : mgr.PushStatus( e.Data, Render ); return;
-					case "reserve-uuid"          : mgr.ReserveUuid( e.Data, Render ); return;
-					case "upload"                : mgr.Upload( e.Data, Render ); return;
-					case "download"              : mgr.Download( e.Data, Render ); return;
-					case "remove"                : mgr.Remove( e.Data, Render ); return;
-					case "publish"               : mgr.Publish( e.Data, Render ); return;
+					case "comment"               : mgr.Comment( postData, Render ); return;
+					case "get-comment"           : mgr.GetComments( postData, Render, 3 ); return;
+					case "get-comment-stack"     : mgr.GetCommentStack( postData, Render ); return;
+					case "search"                : mgr.Search( postData, Render ); return;
+					case "place-request"         : mgr.PlaceRequest( postData, Render ); return;
+					case "grant-request"         : mgr.GrantRequest( postData, Render ); return;
+					case "get-requests"          : mgr.GetRequests( postData, Render ); return;
+					case "my-requests"           : mgr.MyRequests( postData, Render ); return;
+					case "my-inbox"              : mgr.MyInbox( postData, Render ); return;
+					case "mesg-read"             : mgr.MessageRead( postData, Render ); return;
+					case "clear-grant-records"   : mgr.ClearGrantRecords( postData, Render ); return;
+					case "withdraw-request"      : mgr.WithdrawRequest( postData, Render ); return;
+					case "status-report"         : mgr.PushStatus( postData, Render ); return;
+					case "reserve-uuid"          : mgr.ReserveUuid( postData, Render ); return;
+					case "upload"                : mgr.Upload( postData, Render ); return;
+					case "download"              : mgr.Download( postData, Render ); return;
+					case "remove"                : mgr.Remove( postData, Render ); return;
+					case "publish"               : mgr.Publish( postData, Render ); return;
 
 					default:
-						throw this.JsonError( Locale.Error.NO_SUCH_ACTION, e.Data.action );
+						throw this.JsonError( Locale.Error.NO_SUCH_ACTION, postData.action );
 				}
 			}
 			catch( e )

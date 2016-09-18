@@ -60,6 +60,13 @@ var M_Script = new Schema({
 	, access_token: String
 	// Can be null, i.e. anonymous
 	, author: R_User
+	// Zone, Book
+	, scope: String
+	, version: {
+		t: { m: { type: Number, default: 1 }, n: { type: Number, default: 0 }, r: { type: Number, default: 0 } }
+		, b: { m: { type: Number, default: 1 }, n: { type: Number, default: 0 }, r: { type: Number, default: 0 } }
+		, p: { m: { type: Number, default: 1 }, n: { type: Number, default: 0 }, r: { type: Number, default: 0 } }
+	}
 });
 
 var M_User = new Schema({

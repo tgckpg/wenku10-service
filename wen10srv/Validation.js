@@ -52,7 +52,24 @@ class Validation
 	static OBJECT_ID( id )
 	{
 		if( !ObjectId.isValid( id ) )
-			throw new this.App.JsonError( Locale.Error.INVALID_PARM, "id", postdata.id );
+			throw new ValidationError( Locale.Error.INVALID_PARM, "id", postdata.id );
+	}
+
+	static APPVER( ver )
+	{
+		if( Array.isArray( ver ) )
+		{
+			for( let v of ver )
+				Validation.APPVER( v );
+			return;
+		}
+
+		var v = ver.split( "." );
+		if( !~"pbtd".indexOf( ver.substr( -1 ) )
+			|| Number.isNaN( Number( v[0] ) )
+			|| Number.isNaN( Number( v[1] ) )
+			|| Number.isNaN( Number( v[2].substr( 0, v[2].length - 1 ) ) )
+		) throw new ValidationError( Locale.Error.INVALID_VERSION, ver );
 	}
 }
 

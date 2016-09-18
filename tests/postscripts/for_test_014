@@ -3,13 +3,13 @@
 declare -A POSTDATA=(
 	["uuid"]="$UUID"
 	["action"]="upload"
-	["name"]="Publish 3000"
-	["desc"]="Example Description 3000"
-	["encrypted"]="0"
-	["zone"]="RZone"
+	["name"]="TEST014 ( Compat )"
+	["desc"]="Example Description"
+	["encrypted"]="1"
+	["zone"]="小説家になろう"
 	["type"]="Type C"
 	["scope"]="book"
-	["compat"]="1.0.0t"
+	["compat"]="1.1.0t"
 	["data"]="
 <xml>
 	<test>Test test</test>

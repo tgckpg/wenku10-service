@@ -25,7 +25,9 @@ class ScriptManager
 	/*{{{ Private Actions: Upload / Publish / Remove */
 	Upload( postdata, callback )
 	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type" );
+		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type", "scope", "compat" );
+		Validation.APPVER( postdata.compat );
+
 		Dragonfly.Debug( "Upload: " + postdata.uuid );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( item ) => {
@@ -33,9 +35,11 @@ class ScriptManager
 			item.desc = postdata.desc;
 			item.name = postdata.name;
 			item.enc = ( postdata.enc == "1" );
+			item.scope = ( postdata.scope == "zone" ? postdata.scope : "book" );
 			item.force_enc = ( postdata.force_enc == "1" );
 			item.author = postdata.anon == "1" ? null : this.App.Auth.user;
 
+			DataSetter.CompatVer( item.version, postdata.compat );
 			DataSetter.ArrayData( item, postdata, "zone", "type", "tags" );
 
 		}, callback );
@@ -120,6 +124,7 @@ class ScriptManager
 		Validation.NOT_EMPTY( postdata, "uuid" );
 
 		var criteria = { uuid: postdata.uuid };
+		this.__vercompat( postdata, criteria );
 		this.__privateAccess( postdata, criteria );
 
 		this.__get(
@@ -171,6 +176,7 @@ class ScriptManager
 			, access_token: false
 			, data: false };
 
+		this.__vercompat( postdata, criteria );
 		this.__privateAccess( postdata, criteria );
 
 		var extract = ( err, items ) => {
@@ -186,6 +192,7 @@ class ScriptManager
 					, "uuid", "name", "desc", "hits", "zone"
 					, "type" , "date_modified", "date_created"
 					, "history", "tags", "related", "draft"
+					, "version", "scope"
 					, "public", "enc", "force_enc"
 				);
 
@@ -224,7 +231,7 @@ class ScriptManager
 
 			var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
 
-			this.__stringSearch( postdata, criteria, "name", "desc" );
+			this.__stringSearch( postdata, criteria, "name", "desc", "scope" );
 			this.__in( postdata, criteria, "zone", "type", "tags" );
 
 			Model.Script.find( criteria, fields, extract )
@@ -782,6 +789,20 @@ class ScriptManager
 		catch( ex )
 		{
 			throw this.App.JsonError( ex.message );
+		}
+	}
+
+	__vercompat( postdata, criteria )
+	{
+		var vs = {};
+		DataSetter.CompatVer( vs, [ postdata.ver ] );
+
+		for( var v in vs )
+		{
+			var vNum = vs[ v ];
+		   	criteria[ "version." + v + ".m" ] = { $lte: vNum.m };
+		   	criteria[ "version." + v + ".n" ] = { $lte: vNum.n };
+		   	criteria[ "version." + v + ".r" ] = { $lte: vNum.r };
 		}
 	}
 

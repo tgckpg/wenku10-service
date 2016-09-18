@@ -1,0 +1,67 @@
+#!/bin/bash
+
+goal "Version compat script"
+{
+	goal "Upload Script" 
+	{
+		. ./tests/004_reserve_uuid
+		. ./tests/postscripts/for_test_014
+		. ./tests/assert_token_access
+
+		goal "Publish script"
+		{
+			declare -A POSTDATA=(
+				["action"]="publish"
+				["uuid"]="$UUID"
+				["public"]="1"
+				["lang"]="$RLANG"
+			)
+
+			. ./tests/assert_token_access
+
+			goalend
+		}
+
+		goalend
+	}
+
+	goal "Search compat 1.0.0t"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["ver"]="1.0.0t"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -vq "TEST014" $TempFile
+			exitOk $? "Higher version script should NOT appear in this search"
+		}
+
+		goalend
+	}
+
+	goal "Search compat 1.1.0t"
+	{
+		declare -A POSTDATA=(
+			["action"]="search"
+			["ver"]="1.1.0t"
+			["lang"]="$RLANG"
+		)
+
+		. ./tests/assert_jsuccess
+
+		goal "Checking Search Results"
+		{
+			grep -q -e "TEST014" $TempFile
+			failthru $? "Lower or equal version script should both appear in this search"
+		}
+
+		goalend
+	}
+
+	goalend
+}

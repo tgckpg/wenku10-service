@@ -5,3 +5,6 @@ node_modules
 *.swp
 *.log
 *.tmp
+
+# zh-CN is generated from zh-TW
+*/locale/zh-CN/

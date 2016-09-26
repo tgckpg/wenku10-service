@@ -75,8 +75,9 @@ class Auth
 		}
 
 		var session = this.Control.session;
+		var LoginName = username.trim().toUpperCase();
 
-		Model.User.findOne({ name: username }).exec(
+		Model.User.findOne({ name: LoginName }).exec(
 			( err, data ) => {
 				if( this.__dbErr( err, callback ) ) return;
 
@@ -156,7 +157,8 @@ class Auth
 
 	Register( username, password, email, callback )
 	{
-		Model.User.findOne({ name: username }).exec(
+		var LoginName = username.trim().toUpperCase();
+		Model.User.findOne({ name: LoginName }).exec(
 			( err, data ) => {
 				if( this.__dbErr( err, callback ) ) return;
 
@@ -167,7 +169,7 @@ class Auth
 				}
 
 				var User = new Model.User();
-				User.name = username;
+				User.name = LoginName;
 				User.password = bcrypt.hashSync( password ).replace( /^\$2a/, "$2y" );
 				User.email = email;
 				User.profile.display_name = User.name;

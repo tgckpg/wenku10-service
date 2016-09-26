@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ACCOUNT="penguin"
+ACCOUNT_2=" pEnGuIn  "
 PASSWD="1234456789"
 EMAIL="example@example.com"
 RLANG="en-US"

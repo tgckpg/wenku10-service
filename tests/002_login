@@ -2,11 +2,11 @@
 
 SEND_COOKIE=true
 
-goal "Account Login"
+goal "Account Login ( using \"$ACCOUNT_2\" as they should be the same )"
 {
 	declare -A POSTDATA=(
 		["action"]="login"
-		["user"]="$ACCOUNT"
+		["user"]="$ACCOUNT_2"
 		["passwd"]="$PASSWD"
 		["lang"]="$RLANG"
 	)

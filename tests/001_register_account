@@ -89,5 +89,12 @@ goal "Account Registration"
 		goalend
 	}
 
+	goal "Register again with different cases"
+	{
+		__DefParam "$ACCOUNT_2" "$PASSWD" "$EMAIL"
+		. ./tests/assert_jfail
+		goalend
+	}
+
 	goalend
 }

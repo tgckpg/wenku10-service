@@ -1,6 +1,6 @@
 #!/bin/bash
 SEND_COOKIE=true
-NEW_PASS="GGGGuhecGGGG"
+NEW_PASS="GmGGuhecGNSGx"
 
 goal "Account Change Password"
 {
@@ -11,7 +11,7 @@ goal "Account Change Password"
 		declare -A POSTDATA=(
 			["action"]="passwd"
 			["curr"]="$NEW_PASS"
-			["new"]="1111111"
+			["new"]="111111111"
 			["lang"]="$RLANG"
 		)
 

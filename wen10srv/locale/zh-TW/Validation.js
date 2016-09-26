@@ -5,4 +5,5 @@ module.exports = {
 	, "PASS_IS_A_JOKE": "這樣的密碼不行吧"
 	, "ERROR": "數據檢驗失敗"
 	, "INVALID_EMAIL": "請輸入有效的電郵地址"
+	, "PASS_IS_TOP250": "此密碼被列為首 250 個常用密碼，如果我是你的話我會擔心其它帳戶"
 };

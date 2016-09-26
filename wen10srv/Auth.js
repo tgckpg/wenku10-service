@@ -172,7 +172,7 @@ class Auth
 				User.name = LoginName;
 				User.password = bcrypt.hashSync( password ).replace( /^\$2a/, "$2y" );
 				User.email = email;
-				User.profile.display_name = User.name;
+				User.profile.display_name = username.trim();
 				User.lang = this.App.Lang;
 
 				User.save( ( sErr ) => {

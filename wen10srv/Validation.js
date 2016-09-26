@@ -5,6 +5,8 @@ const Locale = cl.load( "botansx.modular.localization" );
 
 const ObjectId = require( "mongoose" ).Types.ObjectId;
 
+const top250 = cl.load( "wen10srv.config.cpasswd" );
+
 class ValidationError
 {
 	constructor( message, ...params )
@@ -39,8 +41,11 @@ class Validation
 			throw new ValidationError( Locale.Validation.PASS_TOO_SHORT, 8 );
 
 		if( pass.replace( "12345678", "" ).length < 4
-			|| pass.replace( pass[0], "" ).length < 3 )
+			|| pass.replace( new RegExp( pass[0], "g" ), "" ).length < 5 )
 			throw new ValidationError( Locale.Validation.PASS_IS_A_JOKE );
+
+		if( top250.includes( pass ) )
+			throw new ValidationError( Locale.Validation.PASS_IS_TOP250 );
 	}
 
 	static EMAIL( email )

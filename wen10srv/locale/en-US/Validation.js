@@ -5,4 +5,5 @@ module.exports = {
 	, "PASS_IS_A_JOKE": "Your password is a joke"
 	, "ERROR": "Validation error"
 	, "INVALID_EMAIL": "Please enter a valid email address"
+	, "PASS_IS_TOP250": "This password was in Top 250. If I were you I'll be worried on my other accounts."
 };

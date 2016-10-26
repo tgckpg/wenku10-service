@@ -1,7 +1,7 @@
 #!/bin/bash
 cd $(dirname $0);
 
-NODE=~/local/nodejs/v6.0.0
+NODE=~/local/nodejs/v7.0.0
 export PATH=$PATH:"$NODE/bin:$NODE/lib/node_modules"
 
 echo "{CI_SECTION_START} Build"

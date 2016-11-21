@@ -796,13 +796,30 @@ class ScriptManager
 	{
 		var vs = {};
 		DataSetter.CompatVer( vs, [ postdata.ver ] );
+		criteria.$or = criteria.$or || [];
 
 		for( var v in vs )
 		{
 			var vNum = vs[ v ];
-		   	criteria[ "version." + v + ".m" ] = { $lte: vNum.m };
-		   	criteria[ "version." + v + ".n" ] = { $lte: vNum.n };
-		   	criteria[ "version." + v + ".r" ] = { $lte: vNum.r };
+
+			var vm = "version." + v + ".m";
+			var vn = "version." + v + ".n";
+			var vr = "version." + v + ".r";
+
+			var major = {};
+			major[ vm ] = { $lt: vNum.m };
+			criteria.$or.push( major );
+
+			var minor = {};
+			minor[ vm ] = { $lte: vNum.m };
+			minor[ vn ] = { $lt: vNum.m };
+			criteria.$or.push( minor );
+
+			var revision = {};
+			revision[ vm ] = { $lte: vNum.m };
+			revision[ vn ] = { $lte: vNum.m };
+			revision[ vr ] = { $lte: vNum.r };
+			criteria.$or.push( revision );
 		}
 	}
 

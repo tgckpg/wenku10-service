@@ -806,20 +806,9 @@ class ScriptManager
 			var vn = "version." + v + ".n";
 			var vr = "version." + v + ".r";
 
-			var major = {};
-			major[ vm ] = { $lt: vNum.m };
-			criteria.$or.push( major );
-
-			var minor = {};
-			minor[ vm ] = { $lte: vNum.m };
-			minor[ vn ] = { $lt: vNum.m };
-			criteria.$or.push( minor );
-
-			var revision = {};
-			revision[ vm ] = { $lte: vNum.m };
-			revision[ vn ] = { $lte: vNum.m };
-			revision[ vr ] = { $lte: vNum.r };
-			criteria.$or.push( revision );
+			criteria.$or.push({ [vm]: { $lt: vNum.m } })
+			criteria.$or.push({ [vm]: { $eq: vNum.m }, [vn]: { $lt: vNum.n } });
+			criteria.$or.push({ [vm]: { $eq: vNum.m }, [vn]: { $eq: vNum.n }, [vr]: { $lte: vNum.r } });
 		}
 	}
 

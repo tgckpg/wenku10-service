@@ -80,6 +80,8 @@ var M_User = new Schema({
 
 	, lang: { type: String, default: "en-US" }
 	, nsubs: [ R_Notification ]
+	, last_login: { type: Date, default: Date.now }
+	, date_created: { type: Date, default: Date.now }
 });
 
 var M_Notification = new Schema({

@@ -92,6 +92,9 @@ class Auth
 						this.cookie.seth( "sid", session.id );
 						callback( this.App.JsonSuccess() );
 					} );
+
+					data.last_login = Date.now();
+					data.save();
 				}
 				else
 				{

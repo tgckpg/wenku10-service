@@ -497,7 +497,7 @@ class ScriptManager
 	{
 		this.__AuthRequired();
 
-		Validation.NOT_EMPTY( postdata, "id", "target", "pubkey", "remarks" );
+		Validation.NOT_EMPTY( postdata, "id", "target", "pubkey", "dev_id", "dev_name", "remarks" );
 
 		var target;
 
@@ -657,7 +657,7 @@ class ScriptManager
 			{
 				var saneData = this.utils.refObj(
 					item
-					, "_id", "target", "date_created", "grants"
+					, "_id", "target", "date_created", "grants", "dev_id", "dev_name"
 				);
 
 				if( item.script )

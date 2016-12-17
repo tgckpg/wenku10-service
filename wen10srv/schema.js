@@ -97,6 +97,8 @@ var M_Request = new Schema({
 	, remarks: String
 	, target: String
 	, script: R_Script
+	, dev_id: String
+	, dev_name: String
 	, date_created: { type: Date, default: Date.now }
 });
 

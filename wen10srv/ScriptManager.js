@@ -59,7 +59,7 @@ class ScriptManager
 				callback( this.App.JsonSuccess() );
 			} );
 
-		}, callback, { public: 1, draft: 1, access_token: 1 } );
+		}, callback, { public: true, draft: true, access_token: true, author: true } );
 	}
 
 	Remove( postdata, callback )
@@ -67,7 +67,7 @@ class ScriptManager
 		Validation.NOT_EMPTY( postdata, "uuid" );
 
 		Model.Script.findOne(
-			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
+			{ uuid: postdata.uuid }, { access_token: true, author: true }, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )

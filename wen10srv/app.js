@@ -85,7 +85,14 @@ class App extends Base
 				switch( postData.action )
 				{
 					case "session-valid":
-						Render( new JsonProto( null, this.Auth.LoggedIn, "OK" ) );
+						if( this.Auth.LoggedIn )
+						{
+							Render( new JsonProto( this.Auth.user.id, true, "OK" ) );
+						}
+						else
+						{
+							Render( new JsonProto( null, false, "OK" ) );
+						}
 						return;
 
 					case "login":

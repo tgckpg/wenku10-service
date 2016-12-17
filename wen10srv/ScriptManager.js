@@ -520,7 +520,7 @@ class ScriptManager
 		fields[ target ] = true;
 
 		Model.Script.findOne(
-				{ uuid: postdata.id }, fields, ( e, data ) => {
+			{ uuid: postdata.id }, fields, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -550,6 +550,8 @@ class ScriptManager
 				KRequest.remarks = postdata.remarks;
 				KRequest.script = data;
 				KRequest.target = target;
+				KRequest.dev_name = postdata.dev_name;
+				KRequest.dev_id = postdata.dev_id;
 
 				if( !ReplaceRequest ) data[ target ].push( KRequest );
 

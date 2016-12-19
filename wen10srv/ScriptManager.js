@@ -228,6 +228,14 @@ class ScriptManager
 		}
 		else
 		{
+			var order = { date_created: -1 };
+
+			if( postdata.featured )
+			{
+				criteria.featured = { $gt: 0 };
+				order = { featured: -1, date_created: -1 };
+			}
+
 			this.utils.use( "math" );
 
 			var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
@@ -237,7 +245,7 @@ class ScriptManager
 
 			Model.Script.find( criteria, fields, extract )
 				.populate( "author" )
-				.sort({ date_created: -1 })
+				.sort( order )
 				.skip( skip ).limit( limit );
 		}
 	}

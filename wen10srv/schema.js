@@ -62,6 +62,7 @@ var M_Script = new Schema({
 	, author: R_User
 	// Zone, Book
 	, scope: String
+	, featured: { type: Number, default: 0 }
 	, version: {
 		t: { m: { type: Number, default: 1 }, n: { type: Number, default: 0 }, r: { type: Number, default: 0 } }
 		, b: { m: { type: Number, default: 1 }, n: { type: Number, default: 0 }, r: { type: Number, default: 0 } }

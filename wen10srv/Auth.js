@@ -83,18 +83,26 @@ class Auth
 
 				if( data && bcrypt.compareSync( password, data.password ) )
 				{
-					session.set( "LoggedIn", true );
-					session.set( "user.id", data.id );
-					session.set( "user.nickname", data.profile.display_name );
+					session.spawn( undefined, ( e ) => {
+						if( e )
+						{
+							Dragonfly.Error( e );
+							callback( this.App.JsonError( Locale.Error.SESS_DATA_FAILED ) );
+							return;
+						}
+						session.set( "LoggedIn", true );
+						session.set( "user.id", data.id );
+						session.set( "user.nickname", data.profile.display_name );
 
-					this.Control.session.once( "set", () => {
-						this.cookie.set( "Path", "/" );
-						this.cookie.seth( "sid", session.id );
-						callback( this.App.JsonSuccess() );
+						session.once( "set", () => {
+							this.cookie.set( "Path", "/" );
+							this.cookie.seth( "sid", session.id );
+							callback( this.App.JsonSuccess() );
+						} );
+
+						data.last_login = Date.now();
+						data.save();
 					} );
-
-					data.last_login = Date.now();
-					data.save();
 				}
 				else
 				{

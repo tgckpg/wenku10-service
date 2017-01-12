@@ -52,6 +52,8 @@ function TestRequest() {
 		declare -A POSTDATA=(
 			["action"]="place-request"
 			["remarks"]="This is a remark for $TYPE"
+			["dev_name"]="CI-Debian"
+			["dev_id"]="abcd1234"
 			["pubkey"]="$PUBKEY"
 			["lang"]="$RLANG"
 		)
@@ -64,6 +66,8 @@ function TestRequest() {
 			declare -A POSTDATA=(
 				["action"]="place-request"
 				["remarks"]="This is a remark"
+				["dev_name"]="CI-Debian"
+				["dev_id"]="abcd1234"
 				["pubkey"]="$PUBKEY"
 				["lang"]="$RLANG"
 				["target"]="$TYPE"

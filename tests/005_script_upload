@@ -15,7 +15,6 @@ goal "Upload script"
 
 	. ./tests/002_login
 
-
 	SEND_COOKIE=true
 
 	goal "LoggedIn Script upload"
@@ -31,7 +30,6 @@ goal "Upload script"
 		declare -A POSTDATA=(
 			["action"]="search"
 			["uuid"]="$UUID"
-			["access_token"]="$ACCESS_TOKEN"
 			["lang"]="$RLANG"
 		)
 		. ./tests/assert_jsuccess

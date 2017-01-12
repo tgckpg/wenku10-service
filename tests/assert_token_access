@@ -1,27 +1,50 @@
 #!/bin/bash
-goal "Action should failed without token"
-{
-	. ./tests/assert_jfail
-	goalend
-}
 
-goal "Action should failed with empty token"
-{
-	POSTDATA["access_token"]=""
-	. ./tests/assert_jfail
-	goalend
-}
+if $SEND_COOKIE; then
+	goal "Action should success without token"
+	{
+		. ./tests/assert_jsuccess
+		goalend
+	}
 
-goal "Action should failed with wrong token"
-{
-	POSTDATA["access_token"]="WRONG_ACCESS_TOKEN"
-	. ./tests/assert_jfail
-	goalend
-}
+	goal "Action should success with empty token"
+	{
+		POSTDATA["access_token"]=""
+		. ./tests/assert_jsuccess
+		goalend
+	}
 
-goal "Providing access_token"
-{
-	POSTDATA["access_token"]="$ACCESS_TOKEN"
-	. ./tests/assert_jsuccess
-	goalend
-}
+	goal "Action should success with wrong token"
+	{
+		POSTDATA["access_token"]="WRONG_ACCESS_TOKEN"
+		. ./tests/assert_jsuccess
+		goalend
+	}
+else
+	goal "Action should failed without token"
+	{
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Action should failed with empty token"
+	{
+		POSTDATA["access_token"]=""
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Action should failed with wrong token"
+	{
+		POSTDATA["access_token"]="WRONG_ACCESS_TOKEN"
+		. ./tests/assert_jfail
+		goalend
+	}
+
+	goal "Providing access_token"
+	{
+		POSTDATA["access_token"]="$ACCESS_TOKEN"
+		. ./tests/assert_jsuccess
+		goalend
+	}
+fi

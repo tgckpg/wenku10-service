@@ -25,7 +25,7 @@ class ScriptManager
 	/*{{{ Private Actions: Upload / Publish / Remove */
 	Upload( postdata, callback )
 	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "data", "name", "desc", "zone", "type", "scope", "compat" );
+		Validation.NOT_EMPTY( postdata, "uuid", "data", "name", "desc", "zone", "type", "scope", "compat" );
 		Validation.APPVER( postdata.compat );
 
 		Dragonfly.Debug( "Upload: " + postdata.uuid );
@@ -47,7 +47,7 @@ class ScriptManager
 
 	Publish( postdata, callback )
 	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token", "public" );
+		Validation.NOT_EMPTY( postdata, "uuid", "public" );
 
 		this.__edit( postdata.uuid, postdata.access_token, ( data ) => {
 
@@ -59,15 +59,15 @@ class ScriptManager
 				callback( this.App.JsonSuccess() );
 			} );
 
-		}, callback, { public: 1, draft: 1, access_token: 1 } );
+		}, callback, { public: true, draft: true, access_token: true, author: true } );
 	}
 
 	Remove( postdata, callback )
 	{
-		Validation.NOT_EMPTY( postdata, "uuid", "access_token" );
+		Validation.NOT_EMPTY( postdata, "uuid" );
 
 		Model.Script.findOne(
-			{ uuid: postdata.uuid }, { access_token: true }, ( e, data ) => {
+			{ uuid: postdata.uuid }, { access_token: true, author: true }, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -76,7 +76,7 @@ class ScriptManager
 					return;
 				}
 
-				if( data.access_token != postdata.access_token )
+				if(!( this.__authorAccess( data ) || data.access_token == postdata.access_token ))
 				{
 					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 					return;
@@ -92,16 +92,17 @@ class ScriptManager
 	/* End Private Actions }}}*/
 
 	/*{{{ Public Actions: Reserve / Download / Status Reports */
-	ReserveUuid( data, callback )
+	ReserveUuid( postdata, callback )
 	{
-		Validation.NOT_EMPTY( data, "access_token" );
+		Validation.NOT_EMPTY( postdata, "access_token" );
 
 		this.utils.use( "random" );
 		var uuid = this.utils.uuid();
 
 		var ScriptM = new Model.Script();
 		ScriptM.uuid = uuid;
-		ScriptM.access_token = data.access_token;
+		ScriptM.access_token = postdata.access_token;
+		ScriptM.author = postdata.anon == "1" ? null : this.App.Auth.user;
 
 		ScriptM.save( ( e ) => {
 			if( this.__dbErr( e, callback ) ) return;
@@ -227,6 +228,14 @@ class ScriptManager
 		}
 		else
 		{
+			var order = { date_created: -1 };
+
+			if( postdata.featured )
+			{
+				criteria.featured = { $gt: 0 };
+				order = { featured: -1, date_created: -1 };
+			}
+
 			this.utils.use( "math" );
 
 			var limit = this.utils.clamp( parseInt( postdata.limit ) || 50, 1, 100 );
@@ -236,7 +245,7 @@ class ScriptManager
 
 			Model.Script.find( criteria, fields, extract )
 				.populate( "author" )
-				.sort({ date_created: -1 })
+				.sort( order )
 				.skip( skip ).limit( limit );
 		}
 	}
@@ -497,7 +506,7 @@ class ScriptManager
 	{
 		this.__AuthRequired();
 
-		Validation.NOT_EMPTY( postdata, "id", "target", "pubkey", "remarks" );
+		Validation.NOT_EMPTY( postdata, "id", "target", "pubkey", "dev_id", "dev_name", "remarks" );
 
 		var target;
 
@@ -520,7 +529,7 @@ class ScriptManager
 		fields[ target ] = true;
 
 		Model.Script.findOne(
-				{ uuid: postdata.id }, fields, ( e, data ) => {
+			{ uuid: postdata.id }, fields, ( e, data ) => {
 				if( this.__dbErr( e, callback ) ) return;
 
 				if( !data )
@@ -550,6 +559,8 @@ class ScriptManager
 				KRequest.remarks = postdata.remarks;
 				KRequest.script = data;
 				KRequest.target = target;
+				KRequest.dev_name = postdata.dev_name;
+				KRequest.dev_id = postdata.dev_id;
 
 				if( !ReplaceRequest ) data[ target ].push( KRequest );
 
@@ -657,7 +668,7 @@ class ScriptManager
 			{
 				var saneData = this.utils.refObj(
 					item
-					, "_id", "target", "date_created", "grants"
+					, "_id", "target", "date_created", "grants", "dev_id", "dev_name"
 				);
 
 				if( item.script )
@@ -822,12 +833,27 @@ class ScriptManager
 					: { access_token: postdata.access_token }
 				, { public: true, draft: false, enable: true }
 			];
+
+			if( this.App.Auth.LoggedIn )
+			{
+				criteria.$or.push({ author: this.App.Auth.user });
+			}
 		}
 		else
 		{
-			criteria.public = true;
-			criteria.draft = false;
-			criteria.enable = true;
+			if( this.App.Auth.LoggedIn )
+			{
+				criteria.$or = [
+					{ author: this.App.Auth.user }
+					, { public: true, draft: false, enable: true }
+				];
+			}
+			else
+			{
+				criteria.public = true;
+				criteria.draft = false;
+				criteria.enable = true;
+			}
 		}
 	}
 
@@ -863,7 +889,7 @@ class ScriptManager
 					return;
 				}
 
-				if( data.access_token != accessToken )
+				if(!( this.__authorAccess( data ) || data.access_token == accessToken ))
 				{
 					callback( this.App.JsonError( Locale.Error.ACCESS_DENIED ) );
 					return;
@@ -905,6 +931,11 @@ class ScriptManager
 	{
 		if( !this.App.Auth.LoggedIn )
 			throw this.App.JsonError( Locale.Error.ACCESS_DENIED );
+	}
+
+	__authorAccess( data )
+	{
+		return data.author && this.App.Auth.user && this.App.Auth.user.equals( data.author );
 	}
 	/* End Field Helpers }}}*/
 

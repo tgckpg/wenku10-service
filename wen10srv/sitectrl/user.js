@@ -45,6 +45,9 @@ class UserControls extends Infrastructure
 						}
 
 						callback();
+
+						data.last_login = Date.now();
+						data.save();
 					}
 				);
 			}
